@@ -74,37 +74,37 @@ export default function Login() {
           <div className="inline-flex h-14 w-14 bg-medical-500 rounded-2xl items-center justify-center shadow-lg shadow-medical-500/20 mb-4">
             <Shield className="h-7 w-7 text-white" />
           </div>
-          <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight font-sans">
+          <h2 className="text-4xl font-black text-slate-900 tracking-tight font-sans">
             HAMS Portal
           </h2>
-          <p className="mt-2 text-sm text-slate-500 font-medium">
+          <p className="mt-2 text-base text-slate-600 font-medium">
             Hospital Asset Lifecycle Management System
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-xl">
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-xl">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-650 text-xs flex items-center gap-2 font-medium">
-              <Info className="h-4 w-4 text-red-500" />
+            <div className="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center gap-2.5 font-semibold">
+              <Info className="h-5 w-5 text-red-500 flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+              <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-2">
                 Email Address
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
                   <User className="h-5 w-5" />
                 </span>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 border border-slate-250 rounded-lg text-slate-900 outline-none focus:border-medical-500 focus:bg-white focus:ring-2 focus:ring-medical-500/20 transition-all text-sm font-medium"
+                  className="w-full pl-11 pr-4 py-3 bg-slate-50/70 border border-slate-300 rounded-xl text-slate-900 outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all text-base font-semibold"
                   placeholder="Enter email address"
                   required
                 />
@@ -112,18 +112,18 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+              <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-2">
                 Password
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
                   <Key className="h-5 w-5" />
                 </span>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 border border-slate-250 rounded-lg text-slate-900 outline-none focus:border-medical-500 focus:bg-white focus:ring-2 focus:ring-medical-500/20 transition-all text-sm font-medium"
+                  className="w-full pl-11 pr-4 py-3 bg-slate-50/70 border border-slate-300 rounded-xl text-slate-900 outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all text-base font-semibold"
                   placeholder="Enter password"
                   required
                 />
@@ -133,24 +133,25 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn-primary py-2.5 bg-medical-500 hover:bg-medical-600 font-bold active:scale-[0.99] transition-transform text-white rounded-lg text-sm flex items-center justify-center shadow-md shadow-medical-500/10"
+              className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 font-bold active:scale-[0.99] transition-transform text-white rounded-xl text-base flex items-center justify-center shadow-lg shadow-blue-500/20"
             >
-              {loading ? 'Authenticating...' : 'Sign In'}
+              {loading ? 'Authenticating...' : 'Sign In to Portal'}
             </button>
           </form>
         </div>
 
         {/* Demo Cards Section */}
         <div className="space-y-3">
+          <p className="text-center text-xs font-bold text-slate-400 uppercase tracking-wider">Quick Demo Login</p>
           <div className="grid grid-cols-2 gap-3">
             {demoAccounts.map((dem) => (
               <button
                 key={dem.role}
                 type="button"
                 onClick={() => handleDemoClick(dem)}
-                className={`p-3 bg-gradient-to-br ${dem.color} border hover:scale-[1.02] active:scale-[0.98] transition-all rounded-xl text-center flex flex-col items-center justify-center font-semibold`}
+                className={`p-3.5 bg-gradient-to-br ${dem.color} border hover:scale-[1.02] active:scale-[0.98] transition-all rounded-xl text-center flex flex-col items-center justify-center font-bold`}
               >
-                <span className="text-xs font-bold block capitalize">{dem.role}</span>
+                <span className="text-sm font-extrabold block capitalize">{dem.role}</span>
               </button>
             ))}
           </div>

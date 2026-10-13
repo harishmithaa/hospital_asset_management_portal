@@ -15,7 +15,7 @@ const STATUS_COLORS = {
 };
 
 const StatusBadge = ({ status }) => (
-  <span className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border ${STATUS_COLORS[status] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+  <span className={`inline-flex items-center text-xs font-bold px-3 py-1 rounded-full border ${STATUS_COLORS[status] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
     {status}
   </span>
 );
@@ -282,61 +282,61 @@ export default function Equipment() {
       ) : (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-base">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Equipment</th>
-                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Category</th>
-                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Department</th>
-                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Next Maintenance</th>
-                  {isAdmin && <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>}
-                  <th className="py-3 px-4" />
+                  <th className="text-left py-3.5 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Equipment</th>
+                  <th className="text-left py-3.5 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Category</th>
+                  <th className="text-left py-3.5 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Department</th>
+                  <th className="text-left py-3.5 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Status</th>
+                  <th className="text-left py-3.5 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider hidden lg:table-cell">Next Maintenance</th>
+                  {isAdmin && <th className="text-left py-3.5 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider">Actions</th>}
+                  <th className="py-3.5 px-4" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filtered.map(e => (
                   <tr key={e._id} className="hover:bg-slate-50 transition-colors group">
-                    <td className="py-3 px-4">
+                    <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Stethoscope className="h-4 w-4 text-blue-500" />
+                        <div className="h-9 w-9 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <Stethoscope className="h-5 w-5 text-blue-600" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-slate-800">{e.name}</p>
-                          <p className="text-[11px] text-slate-400 font-mono">{e.equipmentId}</p>
+                          <p className="text-base font-bold text-slate-900">{e.name}</p>
+                          <p className="text-xs text-slate-500 font-mono font-medium">{e.equipmentId}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-xs text-slate-600">{e.category}</td>
-                    <td className="py-3 px-4 text-xs text-slate-600">
+                    <td className="py-3.5 px-4 text-sm font-medium text-slate-700">{e.category}</td>
+                    <td className="py-3.5 px-4 text-sm font-medium text-slate-700">
                       <span>{e.department?.name || '—'}</span>
                       {e.roomNumber && <br />}
-                      {e.roomNumber && <span className="text-slate-400">Room {e.roomNumber}</span>}
+                      {e.roomNumber && <span className="text-slate-400 text-xs">Room {e.roomNumber}</span>}
                     </td>
-                    <td className="py-3 px-4"><StatusBadge status={e.currentStatus} /></td>
-                    <td className="py-3 px-4 text-xs text-slate-600 hidden lg:table-cell">
+                    <td className="py-3.5 px-4"><StatusBadge status={e.currentStatus} /></td>
+                    <td className="py-3.5 px-4 text-sm text-slate-700 hidden lg:table-cell font-medium">
                       {e.nextMaintenanceDate ? (
-                        <span className={new Date(e.nextMaintenanceDate) < new Date() ? 'text-red-600 font-semibold' : ''}>
+                        <span className={new Date(e.nextMaintenanceDate) < new Date() ? 'text-red-600 font-bold' : ''}>
                           {new Date(e.nextMaintenanceDate).toLocaleDateString()}
                         </span>
                       ) : '—'}
                     </td>
                     {isAdmin && (
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => { setEditEquipment(e); setShowModal(true); }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
-                            <Edit2 className="h-3.5 w-3.5" />
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={() => { setEditEquipment(e); setShowModal(true); }} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+                            <Edit2 className="h-4 w-4" />
                           </button>
-                          <button onClick={() => handleDelete(e._id, e.name)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
-                            <Trash2 className="h-3.5 w-3.5" />
+                          <button onClick={() => handleDelete(e._id, e.name)} className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
                       </td>
                     )}
-                    <td className="py-3 px-4">
-                      <button onClick={() => navigate(`/equipment/${e._id}`)} className="flex items-center gap-1 text-xs text-blue-600 font-semibold hover:text-blue-700 opacity-0 group-hover:opacity-100 transition-all">
-                        Details <ChevronRight className="h-3 w-3" />
+                    <td className="py-3.5 px-4">
+                      <button onClick={() => navigate(`/equipment/${e._id}`)} className="flex items-center gap-1 text-sm text-blue-600 font-bold hover:text-blue-700 opacity-0 group-hover:opacity-100 transition-all">
+                        Details <ChevronRight className="h-4 w-4" />
                       </button>
                     </td>
                   </tr>

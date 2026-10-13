@@ -18,46 +18,46 @@ import {
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
 const StatCard = ({ label, value, icon: Icon, color, sub }) => (
-  <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
-    <div className={`h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
-      <Icon className="h-6 w-6 text-white" />
+  <div className="bg-white rounded-2xl border border-slate-200 p-6 flex items-center gap-5 hover:shadow-lg transition-all">
+    <div className={`h-14 w-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${color} shadow-sm`}>
+      <Icon className="h-7 w-7 text-white" />
     </div>
     <div>
-      <p className="text-2xl font-bold text-slate-800">{value ?? '—'}</p>
-      <p className="text-xs font-medium text-slate-500">{label}</p>
-      {sub && <p className={`text-[10px] mt-0.5 font-medium ${sub.color || 'text-slate-400'}`}>{sub.text}</p>}
+      <p className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">{value ?? '—'}</p>
+      <p className="text-sm md:text-base font-semibold text-slate-600 mt-0.5">{label}</p>
+      {sub && <p className={`text-xs mt-1 font-semibold ${sub.color || 'text-slate-400'}`}>{sub.text}</p>}
     </div>
   </div>
 );
 
 const SectionHeader = ({ title }) => (
-  <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">{title}</h3>
+  <h3 className="text-base md:text-lg font-black text-slate-800 tracking-wide mb-3">{title}</h3>
 );
 
 const statusBadge = (status) => {
   const map = {
-    'Working':          'bg-emerald-100 text-emerald-700',
-    'Under Maintenance':'bg-amber-100 text-amber-700',
-    'Out of Service':   'bg-red-100 text-red-700',
-    'Disposed':         'bg-slate-100 text-slate-500',
-    'Open':             'bg-blue-100 text-blue-700',
-    'Assigned':         'bg-amber-100 text-amber-700',
-    'In Progress':      'bg-indigo-100 text-indigo-700',
-    'Completed':        'bg-emerald-100 text-emerald-700',
-    'Closed':           'bg-slate-100 text-slate-500',
-    'Scheduled':        'bg-blue-100 text-blue-700',
-    'Overdue':          'bg-red-100 text-red-700',
+    'Working':          'bg-emerald-100 text-emerald-800 border-emerald-200',
+    'Under Maintenance':'bg-amber-100 text-amber-800 border-amber-200',
+    'Out of Service':   'bg-red-100 text-red-800 border-red-200',
+    'Disposed':         'bg-slate-100 text-slate-600 border-slate-200',
+    'Open':             'bg-blue-100 text-blue-800 border-blue-200',
+    'Assigned':         'bg-amber-100 text-amber-800 border-amber-200',
+    'In Progress':      'bg-indigo-100 text-indigo-800 border-indigo-200',
+    'Completed':        'bg-emerald-100 text-emerald-800 border-emerald-200',
+    'Closed':           'bg-slate-100 text-slate-600 border-slate-200',
+    'Scheduled':        'bg-blue-100 text-blue-800 border-blue-200',
+    'Overdue':          'bg-red-100 text-red-800 border-red-200',
   };
   return (
-    <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full ${map[status] || 'bg-slate-100 text-slate-600'}`}>
+    <span className={`inline-block text-xs font-bold px-3 py-1 rounded-full border ${map[status] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
       {status}
     </span>
   );
 };
 
 const priorityBadge = (priority) => {
-  const map = { 'Critical': 'bg-red-100 text-red-700', 'High': 'bg-orange-100 text-orange-700', 'Medium': 'bg-amber-100 text-amber-700', 'Low': 'bg-green-100 text-green-700' };
-  return <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full ${map[priority] || 'bg-slate-100 text-slate-600'}`}>{priority}</span>;
+  const map = { 'Critical': 'bg-red-100 text-red-800', 'High': 'bg-orange-100 text-orange-800', 'Medium': 'bg-amber-100 text-amber-800', 'Low': 'bg-green-100 text-green-800' };
+  return <span className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full ${map[priority] || 'bg-slate-100 text-slate-600'}`}>{priority}</span>;
 };
 
 // ─── Admin Dashboard ──────────────────────────────────────────────────────
@@ -551,8 +551,8 @@ function StaffDashboard() {
               <div key={e._id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 transition-colors">
                 <div className={`h-2 w-2 rounded-full flex-shrink-0 ${e.currentStatus === 'Working' ? 'bg-emerald-500' : e.currentStatus === 'Under Maintenance' ? 'bg-amber-500' : 'bg-red-500'}`} />
                 <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/equipment/${e._id}`)}>
-                  <p className="text-xs font-semibold text-slate-800 truncate">{e.name}</p>
-                  <p className="text-[10px] text-slate-400">{e.equipmentId}</p>
+                  <p className="text-sm font-bold text-slate-800 truncate">{e.name}</p>
+                  <p className="text-xs text-slate-500 font-medium">{e.equipmentId}</p>
                 </div>
                 {statusBadge(e.currentStatus)}
                 <button
@@ -586,11 +586,11 @@ function StaffDashboard() {
               {myComplaints.map(c => (
                 <div key={c._id} className="p-3 bg-slate-50 rounded-lg">
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-xs font-semibold text-slate-800 truncate">{c.complaintId} — {c.equipment?.name}</p>
+                    <p className="text-sm font-bold text-slate-800 truncate">{c.complaintId} — {c.equipment?.name}</p>
                     {statusBadge(c.status)}
                   </div>
-                  <p className="text-xs text-slate-500 truncate mt-1">{c.issueDescription}</p>
-                  <div className="flex items-center gap-2 mt-1.5">{priorityBadge(c.priority)}<span className="text-[10px] text-slate-400">{new Date(c.createdAt).toLocaleDateString()}</span></div>
+                  <p className="text-xs text-slate-600 truncate mt-1">{c.issueDescription}</p>
+                  <div className="flex items-center gap-2 mt-1.5">{priorityBadge(c.priority)}<span className="text-xs text-slate-400">{new Date(c.createdAt).toLocaleDateString()}</span></div>
                 </div>
               ))}
             </div>
