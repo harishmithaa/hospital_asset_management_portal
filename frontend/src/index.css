@@ -1,0 +1,127 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 transition-colors duration-300 font-sans antialiased overflow-x-hidden;
+  }
+  
+  /* input-field: reusable form field class */
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 rounded-full transition-colors duration-150;
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    @apply bg-slate-800;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400;
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-700;
+  }
+}
+
+@layer components {
+  /* Universal form field utility */
+  .input-field {
+    @apply w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white;
+  }
+
+  .glass-panel {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-glass-light rounded-2xl;
+  }
+  
+  .dark .glass-panel {
+    @apply bg-slate-900/60 backdrop-blur-md border border-slate-800/50 shadow-glass rounded-2xl;
+  }
+
+  .glass-card {
+    @apply bg-white/80 border border-slate-100 shadow-sm rounded-xl p-6 transition-all duration-300 hover:shadow-md;
+  }
+
+  .dark .glass-card {
+    @apply bg-slate-900/40 border border-slate-800/40 shadow-glass rounded-xl p-6 transition-all duration-300 hover:shadow-md hover:bg-slate-900/60;
+  }
+
+  .btn-primary {
+    @apply bg-medical-600 hover:bg-medical-700 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 shadow-sm hover:shadow active:scale-[0.98] flex items-center justify-center gap-2;
+  }
+
+  .btn-secondary {
+    @apply bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-4 py-2 rounded-lg transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2;
+  }
+
+  .dark .btn-secondary {
+    @apply bg-slate-800 hover:bg-slate-700 text-slate-200;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2 bg-white/80 border border-slate-200 rounded-lg outline-none focus:border-medical-500 focus:ring-2 focus:ring-medical-500/20 transition-all duration-200;
+  }
+
+  .dark .input-field {
+    @apply bg-slate-900/80 border-slate-800 text-slate-100 focus:border-medical-500 focus:ring-medical-500/20;
+  }
+}
+
+/* Custom Table Styles */
+.custom-table {
+  @apply w-full text-left border-collapse;
+}
+
+.custom-table th {
+  @apply py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100 bg-slate-50/50;
+}
+
+.dark .custom-table th {
+  @apply text-slate-400 border-slate-800 bg-slate-900/30;
+}
+
+.custom-table td {
+  @apply py-3.5 px-4 text-sm border-b border-slate-100 font-medium;
+}
+
+.dark .custom-table td {
+  @apply border-slate-850;
+}
+
+/* Animations */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 2s infinite;
+}
+
+@keyframes pulseSubtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
