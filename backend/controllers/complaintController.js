@@ -21,11 +21,16 @@ exports.getComplaints = async (req, res) => {
 
     // Role restrictions
     if (req.user.role === 'Technician' || req.user.role === 'Biomedical Engineer') {
-      query.assignedEngineer = req.user.id;
+      query.$or = [
+        { assignedEngineer: req.user.id },
+        { assignedEngineer: null }
+      ];
     }
 
     if (req.user.role === 'Department Staff') {
-      if (req.user.department) {
+      if (raisedBy) {
+        query.raisedBy = req.user.id;
+      } else if (req.user.department) {
         query.department = req.user.department;
       } else {
         return res.json({ success: true, count: 0, complaints: [] });
@@ -101,20 +106,26 @@ exports.createComplaint = async (req, res) => {
 
     const imageUpload = req.file ? `/uploads/${req.file.filename}` : '';
 
+    const assignedEngineer = equip.assignedEngineer || null;
+    const initialStatus = assignedEngineer ? 'Assigned' : 'Open';
+
     const complaint = new Complaint({
       equipment: equipmentId,
       department: equip.department,
       raisedBy: req.user._id,
+      assignedEngineer,
       issueDescription,
       priority: priority || 'Medium',
       additionalNotes,
       imageUpload,
-      status: 'Open'
+      status: initialStatus
     });
 
     complaint.updates.push({
-      status: 'Open',
-      note: 'Complaint raised and waiting for engineer assignment.',
+      status: initialStatus,
+      note: assignedEngineer
+        ? 'Complaint raised and assigned to the registered equipment technician.'
+        : 'Complaint raised and waiting for engineer assignment.',
       updatedBy: req.user._id
     });
 
@@ -131,6 +142,16 @@ exports.createComplaint = async (req, res) => {
       message: `Complaint ${complaint.complaintId} raised for ${equip.name} (${equip.equipmentId}).`,
       category: 'Warning'
     });
+
+    // Notify Assigned Technician
+    if (assignedEngineer) {
+      await Notification.create({
+        user: assignedEngineer,
+        title: 'New Complaint for Assigned Equipment',
+        message: `Complaint ${complaint.complaintId} raised by ${req.user.name || 'Staff'} for ${equip.name} (${equip.equipmentId}). Priority: ${priority || 'Medium'}.`,
+        category: 'Warning'
+      });
+    }
 
     res.status(201).json({ success: true, complaint });
   } catch (error) {

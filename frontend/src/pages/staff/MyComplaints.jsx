@@ -32,7 +32,7 @@ export default function MyComplaints() {
       setLoading(true);
       try {
         // Department staff sees complaints for their department
-        const params = {};
+        const params = { raisedBy: user?._id };
         if (filterStatus) params.status = filterStatus;
         const res = await complaintAPI.getAll(params);
         if (res.data.success) {

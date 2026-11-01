@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
-import { QrCode, X, Search, Camera, CheckCircle2, AlertCircle, ArrowRight, ExternalLink, Wrench, Plus, Gauge, SwitchCamera, RefreshCw } from 'lucide-react';
+import { QrCode, X, Search, Camera, CheckCircle2, AlertCircle, ArrowRight, ExternalLink, Wrench, Plus, Gauge, SwitchCamera, RefreshCw, Upload } from 'lucide-react';
 import { equipmentAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -24,11 +24,12 @@ export default function QRScannerModal({ isOpen, onClose, onScanComplete }) {
   const [isSwitchingCamera, setIsSwitchingCamera] = useState(false);
 
   const html5QrcodeRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Load equipment for quick lookup tab
   useEffect(() => {
     if (isOpen) {
-      equipmentAPI.getAll()
+      equipmentAPI.getAll({ all: true })
         .then(res => {
           if (res.data.success) {
             setEquipmentList(res.data.equipment || []);
@@ -227,43 +228,55 @@ export default function QRScannerModal({ isOpen, onClose, onScanComplete }) {
     return facingMode === 'environment' ? 'Rear / Back Camera' : 'Front Camera';
   };
 
+  const handleFileUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setLoadingEq(true);
+    setScanError(null);
+    try {
+      if (!html5QrcodeRef.current) {
+        html5QrcodeRef.current = new Html5Qrcode('qr-reader-container');
+      }
+      const decodedText = await html5QrcodeRef.current.scanFile(file, false);
+      if (decodedText) {
+        handleDecodedText(decodedText);
+      }
+    } catch (err) {
+      console.warn('File QR scan error:', err);
+      setScanError('Could not read a QR code from the uploaded photo. Ensure the QR code is clearly visible or use the manual search tab.');
+      setLoadingEq(false);
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const handleDecodedText = async (rawText) => {
     stopScanner();
     setScannedResult(rawText);
     setScanError(null);
     setLoadingEq(true);
 
-    // Parse equipment ID from multiple formats:
-    // 1. Full app URL: http://localhost:5173/equipment/{mongoId}
-    // 2. Legacy tag:   HAMS-EQ-{mongoId}
-    // 3. Raw MongoDB ObjectId or equipmentId (e.g. EQ-2026-001)
-    let targetId = rawText.trim();
+    let targetId = (rawText || '').trim();
 
-    const urlMatch = targetId.match(/\/equipment\/([^/?#\s]+)/i);
-    if (urlMatch) {
-      const matchedId = urlMatch[1];
-      if (onScanComplete) {
-        try {
-          const single = await equipmentAPI.getById(matchedId);
-          if (single.data.success && single.data.equipment) {
-            setLoadingEq(false);
-            onScanComplete(single.data.equipment);
-            onClose();
-            return;
-          }
-        } catch (_) {}
-      }
-      setLoadingEq(false);
-      onClose();
-      navigate(`/equipment/${matchedId}`);
-      return;
+    // 1. JSON check: {"equipmentId": "EQ-2026-001"}
+    if (targetId.startsWith('{') && targetId.endsWith('}')) {
+      try {
+        const parsed = JSON.parse(targetId);
+        targetId = parsed.equipmentId || parsed.id || parsed._id || targetId;
+      } catch (_) {}
     }
 
-    // Strip HAMS-EQ: or HAMS-EQ- prefixes
-    targetId = targetId.replace(/^HAMS-EQ[:-]/i, '');
+    // 2. Full URL check: http://localhost:5173/equipment/{id}
+    const urlMatch = targetId.match(/\/equipment\/([^/?#\s]+)/i);
+    if (urlMatch) {
+      targetId = urlMatch[1];
+    }
+
+    // 3. Strip prefixes like HAMS-EQ:, HAMS-EQ-, HAMS:, EQ:
+    targetId = targetId.replace(/^HAMS-EQ[:-]/i, '').replace(/^HAMS[:-]/i, '').trim();
 
     try {
-      // Try direct fetch by ObjectId first
+      // Direct lookup by ID or equipmentId (backend handles both safely now)
       try {
         const single = await equipmentAPI.getById(targetId);
         if (single.data.success && single.data.equipment) {
@@ -277,15 +290,16 @@ export default function QRScannerModal({ isOpen, onClose, onScanComplete }) {
           navigate(`/equipment/${single.data.equipment._id}`);
           return;
         }
-      } catch (_) { /* not a valid ObjectId, fall through to list search */ }
+      } catch (_) { /* fall through to search */ }
 
-      // Fall back: search the list by equipmentId / serialNumber
-      const res = await equipmentAPI.getAll();
-      if (res.data.success) {
+      // Fall back: search across all hospital equipment
+      const res = await equipmentAPI.getAll({ all: true });
+      if (res.data.success && res.data.equipment) {
         const found = res.data.equipment.find(
           e => e._id === targetId ||
                e.equipmentId?.toLowerCase() === targetId.toLowerCase() ||
-               e.serialNumber?.toLowerCase() === targetId.toLowerCase()
+               e.serialNumber?.toLowerCase() === targetId.toLowerCase() ||
+               e.name?.toLowerCase() === targetId.toLowerCase()
         );
         if (found) {
           setLoadingEq(false);
@@ -301,11 +315,10 @@ export default function QRScannerModal({ isOpen, onClose, onScanComplete }) {
       }
 
       // Nothing found — show error state
-      setScanError(`No equipment matched "${rawText}". Check the QR sticker and try again.`);
-      setScannedEquipment(null);
+      setScanError(`No equipment matched "${rawText}". Check the QR sticker or search manually.`);
     } catch (err) {
       console.error(err);
-      setScanError('Failed to look up equipment. Check your connection and try again.');
+      setScanError('Failed to look up equipment. Check your connection or search manually.');
     } finally {
       setLoadingEq(false);
     }
@@ -433,7 +446,7 @@ export default function QRScannerModal({ isOpen, onClose, onScanComplete }) {
                     </div>
                   ) : (
                     <div className="space-y-2.5">
-                      {/* Camera Bar / Quick Switcher */}
+                      {/* Camera Bar / Quick Switcher + File Upload */}
                       <div className="flex items-center justify-between gap-2 p-2 bg-slate-100 rounded-xl border border-slate-200">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
@@ -441,16 +454,34 @@ export default function QRScannerModal({ isOpen, onClose, onScanComplete }) {
                             {getCameraDisplayName()}
                           </span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={handleToggleCamera}
-                          disabled={isSwitchingCamera}
-                          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-white hover:bg-slate-50 text-blue-700 border border-slate-200 rounded-lg text-xs font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50 flex-shrink-0"
-                          title="Switch between front and back camera"
-                        >
-                          <SwitchCamera className={`h-3.5 w-3.5 text-blue-600 ${isSwitchingCamera ? 'animate-spin' : ''}`} />
-                          <span>Switch Camera</span>
-                        </button>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileUpload}
+                            accept="image/*"
+                            className="hidden"
+                            id="qr-file-upload-input"
+                          />
+                          <label
+                            htmlFor="qr-file-upload-input"
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold shadow-xs cursor-pointer transition-all active:scale-95"
+                            title="Upload an image containing a QR code"
+                          >
+                            <Upload className="h-3.5 w-3.5 text-indigo-600" />
+                            <span className="hidden sm:inline">Upload Image</span>
+                          </label>
+                          <button
+                            type="button"
+                            onClick={handleToggleCamera}
+                            disabled={isSwitchingCamera}
+                            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-white hover:bg-slate-50 text-blue-700 border border-slate-200 rounded-lg text-xs font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50"
+                            title="Switch between front and back camera"
+                          >
+                            <SwitchCamera className={`h-3.5 w-3.5 text-blue-600 ${isSwitchingCamera ? 'animate-spin' : ''}`} />
+                            <span>Switch</span>
+                          </button>
+                        </div>
                       </div>
 
                       {/* Device dropdown if 3+ lenses detected */}

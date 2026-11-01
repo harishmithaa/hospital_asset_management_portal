@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Equipment = require('../models/Equipment');
 const Maintenance = require('../models/Maintenance');
 const Complaint = require('../models/Complaint');
@@ -14,7 +15,7 @@ const Vendor = require('../models/Vendor');
 // @access  Private
 exports.getEquipment = async (req, res) => {
   try {
-    const { status, category, department, search, isDisposed } = req.query;
+    const { status, category, department, search, isDisposed, all } = req.query;
 
     const query = {};
 
@@ -31,10 +32,13 @@ exports.getEquipment = async (req, res) => {
     }
 
     if (req.user.role === 'Department Staff') {
-      if (req.user.department) {
-        query.department = req.user.department;
-      } else {
-        return res.json({ success: true, count: 0, equipment: [] });
+      // If all=true is specified (e.g., when scanning or picking equipment to raise a complaint), allow viewing all hospital assets
+      if (all !== 'true' && all !== true) {
+        if (req.user.department) {
+          query.department = req.user.department;
+        } else {
+          return res.json({ success: true, count: 0, equipment: [] });
+        }
       }
     }
 
@@ -91,13 +95,23 @@ exports.getEquipment = async (req, res) => {
 // @access  Private
 exports.getEquipmentById = async (req, res) => {
   try {
-    let equipment = await Equipment.findById(req.params.id)
-      .populate('department', 'name head location contact')
-      .populate('assignedEngineer', 'name email phone')
-      .populate('supplierVendor', 'companyName contactPerson email phone address');
+    const rawId = req.params.id ? req.params.id.trim() : '';
+    let equipment = null;
+
+    if (mongoose.isValidObjectId(rawId)) {
+      equipment = await Equipment.findById(rawId)
+        .populate('department', 'name head location contact')
+        .populate('assignedEngineer', 'name email phone')
+        .populate('supplierVendor', 'companyName contactPerson email phone address');
+    }
 
     if (!equipment) {
-      equipment = await Equipment.findOne({ equipmentId: req.params.id })
+      equipment = await Equipment.findOne({
+        $or: [
+          { equipmentId: { $regex: new RegExp(`^${rawId}$`, 'i') } },
+          { serialNumber: { $regex: new RegExp(`^${rawId}$`, 'i') } }
+        ]
+      })
         .populate('department', 'name head location contact')
         .populate('assignedEngineer', 'name email phone')
         .populate('supplierVendor', 'companyName contactPerson email phone address');

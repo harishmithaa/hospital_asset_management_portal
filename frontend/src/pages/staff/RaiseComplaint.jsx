@@ -21,14 +21,26 @@ export default function RaiseComplaint() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    equipmentAPI.getAll().then(r => {
+    equipmentAPI.getAll({ all: true }).then(async (r) => {
       if (r.data.success) {
-        setEquipment(r.data.equipment);
+        let list = r.data.equipment || [];
         if (paramEquipmentId) {
-          setForm(f => ({ ...f, equipment: paramEquipmentId }));
-          const match = r.data.equipment.find(e => e._id === paramEquipmentId);
-          if (match) setScannedEquipment(match);
+          let match = list.find(e => e._id === paramEquipmentId || e.equipmentId === paramEquipmentId);
+          if (!match) {
+            try {
+              const single = await equipmentAPI.getById(paramEquipmentId);
+              if (single.data.success && single.data.equipment) {
+                match = single.data.equipment;
+                list = [match, ...list];
+              }
+            } catch (_) {}
+          }
+          if (match) {
+            setForm(f => ({ ...f, equipment: match._id }));
+            setScannedEquipment(match);
+          }
         }
+        setEquipment(list);
       }
     });
   }, [paramEquipmentId]);
@@ -44,6 +56,12 @@ export default function RaiseComplaint() {
 
   const handleScanComplete = (scannedEq) => {
     if (scannedEq) {
+      setEquipment(prev => {
+        if (!prev.some(e => e._id === scannedEq._id)) {
+          return [scannedEq, ...prev];
+        }
+        return prev;
+      });
       setForm(f => ({ ...f, equipment: scannedEq._id }));
       setScannedEquipment(scannedEq);
       setScannerOpen(false);
@@ -169,13 +187,13 @@ export default function RaiseComplaint() {
                 const match = equipment.find(eq => eq._id === val);
                 setScannedEquipment(match || null);
               }}
-              className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none bg-white"
+              className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none bg-white font-medium"
               required
             >
               <option value="">Select equipment or scan QR above</option>
               {equipment.map(e => (
                 <option key={e._id} value={e._id}>
-                  {e.name} — {e.equipmentId} ({e.currentStatus})
+                  {e.name} — {e.equipmentId} ({e.department?.name || 'Medical Asset'}) · [{e.currentStatus}]
                 </option>
               ))}
             </select>
