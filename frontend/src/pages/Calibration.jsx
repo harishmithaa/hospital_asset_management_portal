@@ -657,6 +657,7 @@ export default function Calibration() {
     equipmentList.forEach(eq => {
       if (eq.isDisposed) return;
 
+      const eqRecords = records.filter(r => (r.equipment?._id || r.equipment) === eq._id);
       const overdueRecord = eqRecords.find(r => r.status === 'Overdue');
       const pendingRecord = eqRecords.find(r => r.status === 'Pending');
       const scheduledRecord = eqRecords.find(r => r.status === 'Scheduled');
