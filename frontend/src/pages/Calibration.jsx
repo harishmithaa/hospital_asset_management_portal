@@ -93,7 +93,7 @@ export default function Calibration() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const isAdmin = user?.role === 'Admin';
-  const isEngineer = user?.role === 'Biomedical Engineer';
+  const isEngineer = user?.role === 'Technician' || user?.role === 'Biomedical Engineer';
 
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -168,7 +168,7 @@ export default function Calibration() {
                   <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Next Due</th>
                   <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Result</th>
                   <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider hidden md:table-cell">Engineer</th>
+                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider hidden md:table-cell">Technician</th>
                   <th className="py-3 px-4" />
                 </tr>
               </thead>

@@ -15,7 +15,7 @@ exports.getCalibrations = async (req, res) => {
     if (engineer) query.engineer = engineer;
 
     // Role restrictions
-    if (req.user.role === 'Biomedical Engineer') {
+    if (req.user.role === 'Technician' || req.user.role === 'Biomedical Engineer') {
       query.engineer = req.user.id;
     }
 

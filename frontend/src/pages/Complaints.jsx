@@ -24,7 +24,7 @@ const Badge = ({ label, color }) => <span className={`text-[10px] font-semibold 
 function UpdateModal({ complaint, engineers, onClose, onSaved }) {
   const { user } = useAuth();
   const isAdmin = user?.role === 'Admin';
-  const isEngineer = user?.role === 'Biomedical Engineer';
+  const isEngineer = user?.role === 'Technician' || user?.role === 'Biomedical Engineer';
 
   const [form, setForm] = useState({
     assignedEngineer: complaint.assignedEngineer?._id || '',
@@ -67,7 +67,7 @@ function UpdateModal({ complaint, engineers, onClose, onSaved }) {
           </div>
           {isAdmin && (
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Assign Engineer</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Assign Technician</label>
               <select value={form.assignedEngineer} onChange={e => setForm(f=>({...f, assignedEngineer: e.target.value}))} className="input-field">
                 <option value="">Unassigned</option>
                 {engineers.map(e => <option key={e._id} value={e._id}>{e.name}</option>)}
@@ -98,7 +98,7 @@ export default function Complaints() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const isAdmin = user?.role === 'Admin';
-  const isEngineer = user?.role === 'Biomedical Engineer';
+  const isEngineer = user?.role === 'Technician' || user?.role === 'Biomedical Engineer';
 
   const [complaints, setComplaints] = useState([]);
   const [engineers, setEngineers] = useState([]);
@@ -117,7 +117,7 @@ export default function Complaints() {
       if (comp.data.success) setComplaints(comp.data.complaints);
       if (isAdmin && engineers.length === 0) {
         const users = await authAPI.getUsers();
-        if (users.data.success) setEngineers(users.data.users.filter(u => u.role === 'Biomedical Engineer'));
+        if (users.data.success) setEngineers(users.data.users.filter(u => u.role === 'Technician' || u.role === 'Biomedical Engineer'));
       }
     } finally { setLoading(false); }
   };

@@ -265,7 +265,7 @@ export default function QRScannerModal({ isOpen, onClose }) {
                   </button>
                 )}
 
-                {(user?.role === 'Admin' || user?.role === 'Biomedical Engineer') && (
+                {(user?.role === 'Admin' || user?.role === 'Technician' || user?.role === 'Biomedical Engineer') && (
                   <>
                     <button
                       onClick={() => handleAction(`/maintenance?equipmentId=${scannedEquipment._id}`)}

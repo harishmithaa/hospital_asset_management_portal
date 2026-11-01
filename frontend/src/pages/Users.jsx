@@ -205,7 +205,7 @@ export default function Users() {
                 <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1">Role *</label>
                 <select {...register('role', { required: true })} className="input-field py-2" required>
                   <option value="Admin">Admin</option>
-                  <option value="Biomedical Engineer">Biomedical Engineer</option>
+                  <option value="Technician">Technician</option>
                   <option value="Department Staff">Department Staff</option>
                   <option value="Vendor">Vendor rep</option>
                 </select>

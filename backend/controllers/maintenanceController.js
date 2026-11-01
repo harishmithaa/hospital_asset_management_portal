@@ -19,7 +19,7 @@ exports.getMaintenance = async (req, res) => {
     if (equipment) query.equipment = equipment;
 
     // Role-based restrictions
-    if (req.user.role === 'Biomedical Engineer') {
+    if (req.user.role === 'Technician' || req.user.role === 'Biomedical Engineer') {
       query.engineer = req.user.id;
     }
 
@@ -141,8 +141,8 @@ exports.updateMaintenance = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Maintenance record not found' });
     }
 
-    // Engineer can only update their own assigned records
-    if (req.user.role === 'Biomedical Engineer' && record.engineer?.toString() !== req.user.id) {
+    // Engineer/Technician can only update their own assigned records
+    if ((req.user.role === 'Technician' || req.user.role === 'Biomedical Engineer') && record.engineer?.toString() !== req.user.id) {
       return res.status(403).json({ success: false, message: 'Not authorized to update this record' });
     }
 

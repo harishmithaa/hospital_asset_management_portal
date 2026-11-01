@@ -88,13 +88,13 @@ const seedData = async () => {
     await adminUser.save();
 
     const engineerUser = new User({
-      name: 'Eng. James Wilson',
-      email: 'engineer@hospital.com',
+      name: 'Tech. James Wilson',
+      email: 'technician@hospital.com',
       phone: '+1-555-1002',
-      role: 'Biomedical Engineer',
+      role: 'Technician',
       department: departments[0]._id, // Emergency
       status: 'Active',
-      password: 'Engineer@123',
+      password: 'Technician@123',
       passwordReset: false
     });
     await engineerUser.save();
@@ -379,10 +379,10 @@ const seedData = async () => {
     console.log('\n✅ Database seeded successfully!');
     console.log('─────────────────────────────────────────────');
     console.log('Demo Login Credentials:');
-    console.log('  Admin:              admin@hospital.com    / Admin@123');
-    console.log('  Biomedical Engineer: engineer@hospital.com / Engineer@123');
-    console.log('  Department Staff:   staff@hospital.com    / Staff@123');
-    console.log('  Vendor:             vendor@hospital.com   / Vendor@123');
+    console.log('  Admin:            admin@hospital.com      / Admin@123');
+    console.log('  Technician:       technician@hospital.com / Technician@123');
+    console.log('  Department Staff: staff@hospital.com      / Staff@123');
+    console.log('  Vendor:           vendor@hospital.com     / Vendor@123');
     console.log('─────────────────────────────────────────────\n');
     process.exit(0);
   } catch (error) {

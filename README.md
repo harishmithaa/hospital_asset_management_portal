@@ -42,9 +42,9 @@ The portal implements role-based dashboards. Click the corresponding credentials
 - **Admin**
   - Email: `admin@hospital.com`
   - Password: `Admin@123`
-- **Biomedical Engineer**
-  - Email: `engineer@hospital.com`
-  - Password: `Engineer@123`
+- **Technician**
+  - Email: `technician@hospital.com`
+  - Password: `Technician@123`
 - **Department Staff**
   - Email: `staff@hospital.com`
   - Password: `Staff@123`

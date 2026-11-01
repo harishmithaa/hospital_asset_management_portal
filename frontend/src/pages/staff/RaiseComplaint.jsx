@@ -177,7 +177,7 @@ export default function RaiseComplaint() {
         <p className="text-xs text-blue-700 font-semibold mb-1">What happens next?</p>
         <ul className="text-xs text-blue-600 space-y-1 list-disc list-inside">
           <li>Your complaint will be reviewed by the Admin</li>
-          <li>A Biomedical Engineer will be assigned to investigate</li>
+          <li>A Technician will be assigned to investigate</li>
           <li>You'll receive notifications as the status updates</li>
           <li>Track your complaint status in "My Complaints"</li>
         </ul>

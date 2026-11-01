@@ -100,7 +100,10 @@ export default function Reports() {
     return String(val);
   };
 
-  const colLabel = (col) => col.split('_').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+  const colLabel = (col) => {
+    if (col === 'assignedEngineer_name' || col === 'engineer_name') return 'Technician';
+    return col.split('_').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+  };
 
   return (
     <div className="space-y-5">

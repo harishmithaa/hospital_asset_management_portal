@@ -19,7 +19,7 @@ exports.getComplaints = async (req, res) => {
     if (raisedBy) query.raisedBy = raisedBy;
 
     // Role restrictions
-    if (req.user.role === 'Biomedical Engineer') {
+    if (req.user.role === 'Technician' || req.user.role === 'Biomedical Engineer') {
       query.assignedEngineer = req.user.id;
     }
 

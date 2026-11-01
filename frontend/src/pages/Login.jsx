@@ -38,9 +38,9 @@ export default function Login() {
       color: 'from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:border-blue-300 shadow-sm'
     },
     {
-      role: 'Biomedical Engineer',
-      email: 'engineer@hospital.com',
-      password: 'Engineer@123',
+      role: 'Technician',
+      email: 'technician@hospital.com',
+      password: 'Technician@123',
       color: 'from-emerald-50 to-teal-50 border-emerald-200 text-emerald-700 hover:border-emerald-300 shadow-sm'
     },
     {

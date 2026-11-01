@@ -28,7 +28,7 @@ export default function Departments() {
 
       if (resDept.data.success) setDepartments(resDept.data.departments);
       if (resUsers.data.success) {
-        setEngineers(resUsers.data.users.filter(u => u.role === 'Biomedical Engineer'));
+        setEngineers(resUsers.data.users.filter(u => u.role === 'Technician' || u.role === 'Biomedical Engineer'));
       }
     } catch (err) {
       console.error(err);
@@ -171,7 +171,7 @@ export default function Departments() {
 
             {/* Footer Engineer info */}
             <div className="border-t border-slate-100 dark:border-slate-800/80 pt-4 mt-5 text-[11px] text-slate-400 flex items-center justify-between">
-              <span>Assigned Biomedical Eng:</span>
+              <span>Assigned Technician:</span>
               <span className="font-semibold text-slate-650 dark:text-slate-350">{dept.engineerAssigned?.name || 'Unassigned'}</span>
             </div>
           </div>
@@ -211,9 +211,9 @@ export default function Departments() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1">Assigned Biomedical Engineer</label>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1">Assigned Technician</label>
                 <select {...register('engineerAssigned')} className="input-field py-2">
-                  <option value="">Select Engineer</option>
+                  <option value="">Select Technician</option>
                   {engineers.map(e => (
                     <option key={e._id} value={e._id}>{e.name}</option>
                   ))}

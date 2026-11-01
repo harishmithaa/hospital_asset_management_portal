@@ -8,7 +8,7 @@ const NotificationSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['Admin', 'Biomedical Engineer', 'Department Staff', 'Vendor'],
+    enum: ['Admin', 'Technician', 'Biomedical Engineer', 'Department Staff', 'Vendor'],
     default: null
   },
   title: {

@@ -719,7 +719,7 @@ export default function Dashboard() {
   const { user } = useAuth();
 
   if (user?.role === 'Admin') return <AdminDashboard />;
-  if (user?.role === 'Biomedical Engineer') return <EngineerDashboard />;
+  if (user?.role === 'Technician' || user?.role === 'Biomedical Engineer') return <EngineerDashboard />;
   if (user?.role === 'Department Staff') return <StaffDashboard />;
   if (user?.role === 'Vendor') return <VendorDashboard />;
 

@@ -200,9 +200,9 @@ function AddMaintenanceModal({ equipment, engineers, onClose, onSaved }) {
             <input type="date" value={form.scheduledDate} onChange={e => setForm(f=>({...f, scheduledDate: e.target.value}))} className="input-field" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1.5">Assign Engineer</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5">Assign Technician</label>
             <select value={form.engineer} onChange={e => setForm(f=>({...f, engineer: e.target.value}))} className="input-field">
-              <option value="">Select engineer</option>
+              <option value="">Select technician</option>
               {engineers.map(e => <option key={e._id} value={e._id}>{e.name}</option>)}
             </select>
           </div>
@@ -338,7 +338,7 @@ export default function EquipmentDetails() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const isAdmin = user?.role === 'Admin';
-  const isEngineer = user?.role === 'Biomedical Engineer';
+  const isEngineer = user?.role === 'Technician' || user?.role === 'Biomedical Engineer';
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -360,7 +360,7 @@ export default function EquipmentDetails() {
       if (isAdmin) {
         const [depts, users] = await Promise.all([departmentAPI.getAll(), authAPI.getUsers()]);
         if (depts.data.success) setDepartments(depts.data.departments);
-        if (users.data.success) setEngineers(users.data.users.filter(u => u.role === 'Biomedical Engineer'));
+        if (users.data.success) setEngineers(users.data.users.filter(u => u.role === 'Technician' || u.role === 'Biomedical Engineer'));
       }
     } finally { setLoading(false); }
   };
@@ -545,7 +545,7 @@ export default function EquipmentDetails() {
                       {m.workDescription && <p className="text-xs text-slate-600"><span className="font-medium">Work:</span> {m.workDescription}</p>}
                       {m.partsReplaced && <p className="text-xs text-slate-600 mt-1"><span className="font-medium">Parts:</span> {m.partsReplaced}</p>}
                       {m.cost > 0 && <p className="text-xs text-slate-600 mt-1"><span className="font-medium">Cost:</span> ₹{m.cost.toLocaleString()}</p>}
-                      {m.engineer && <p className="text-xs text-slate-400 mt-1">Engineer: {m.engineer.name}</p>}
+                      {m.engineer && <p className="text-xs text-slate-400 mt-1">Technician: {m.engineer.name}</p>}
                       {m.remarks && <p className="text-xs text-slate-400 mt-1">Remarks: {m.remarks}</p>}
                     </div>
                   ))}
@@ -603,7 +603,7 @@ export default function EquipmentDetails() {
                           <p className="text-xs font-bold text-slate-700">Calibration — {c.result}</p>
                           <p className="text-xs text-slate-400 mt-0.5">Date: {new Date(c.calibrationDate).toLocaleDateString()} · Due: {new Date(c.dueDate).toLocaleDateString()}</p>
                           {c.observations && <p className="text-xs text-slate-600 mt-1">{c.observations}</p>}
-                          {c.engineer && <p className="text-xs text-slate-400 mt-1">Engineer: {c.engineer.name}</p>}
+                          {c.engineer && <p className="text-xs text-slate-400 mt-1">Technician: {c.engineer.name}</p>}
                         </div>
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${c.result === 'Pass' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>{c.result}</span>
                       </div>

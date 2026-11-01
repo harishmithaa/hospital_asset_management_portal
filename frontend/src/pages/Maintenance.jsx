@@ -22,7 +22,7 @@ function ScheduleModal({ onClose, onSaved }) {
 
   useEffect(() => {
     equipmentAPI.getAll().then(r => r.data.success && setEquipment(r.data.equipment));
-    authAPI.getUsers().then(r => r.data.success && setEngineers(r.data.users.filter(u => u.role === 'Biomedical Engineer')));
+    authAPI.getUsers().then(r => r.data.success && setEngineers(r.data.users.filter(u => u.role === 'Technician' || u.role === 'Biomedical Engineer')));
   }, []);
 
   const handleSubmit = async (e) => {
@@ -73,7 +73,7 @@ function ScheduleModal({ onClose, onSaved }) {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1.5">Assign Engineer</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5">Assign Technician</label>
             <select value={form.engineer} onChange={e => setForm(f=>({...f, engineer: e.target.value}))} className="input-field">
               <option value="">Unassigned</option>
               {engineers.map(e => <option key={e._id} value={e._id}>{e.name}</option>)}
@@ -262,7 +262,7 @@ export default function Maintenance() {
                   <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Type</th>
                   <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Scheduled</th>
                   <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider hidden md:table-cell">Engineer</th>
+                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider hidden md:table-cell">Technician</th>
                   <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Cost</th>
                   <th className="py-3 px-4" />
                 </tr>

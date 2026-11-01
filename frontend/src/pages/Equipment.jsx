@@ -109,7 +109,7 @@ function EquipmentModal({ equipment, departments, vendors, engineers, onClose, o
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Assigned Engineer</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Assigned Technician</label>
               <select value={form.assignedEngineer} onChange={e => set('assignedEngineer', e.target.value)} className="input-field">
                 <option value="">None</option>
                 {engineers.map(eng => <option key={eng._id} value={eng._id}>{eng.name}</option>)}
@@ -191,7 +191,7 @@ export default function Equipment() {
         const [depts, vends, users] = await Promise.all([departmentAPI.getAll(), vendorAPI.getAll(), authAPI.getUsers()]);
         if (depts.data.success) setDepartments(depts.data.departments);
         if (vends.data.success) setVendors(vends.data.vendors);
-        if (users.data.success) setEngineers(users.data.users.filter(u => u.role === 'Biomedical Engineer'));
+        if (users.data.success) setEngineers(users.data.users.filter(u => u.role === 'Technician' || u.role === 'Biomedical Engineer'));
       }
     } finally { setLoading(false); }
   };
@@ -207,7 +207,7 @@ export default function Equipment() {
   };
 
   const getPageTitle = () => {
-    if (user?.role === 'Biomedical Engineer') return 'My Assigned Equipment';
+    if (user?.role === 'Technician' || user?.role === 'Biomedical Engineer') return 'My Assigned Equipment';
     if (user?.role === 'Vendor') return 'My Assigned Equipment';
     if (user?.role === 'Department Staff') return 'Department Equipment';
     return 'Equipment';

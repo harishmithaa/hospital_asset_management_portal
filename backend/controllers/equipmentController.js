@@ -26,7 +26,7 @@ exports.getEquipment = async (req, res) => {
     }
 
     // Role restrictions
-    if (req.user.role === 'Biomedical Engineer') {
+    if (req.user.role === 'Technician' || req.user.role === 'Biomedical Engineer') {
       query.assignedEngineer = req.user.id;
     }
 

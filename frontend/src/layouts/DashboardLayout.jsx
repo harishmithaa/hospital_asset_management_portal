@@ -25,6 +25,13 @@ const NAV_CONFIG = {
     { name: 'Reports',        path: '/reports',      icon: BarChart3 },
     { name: 'Users',          path: '/users',        icon: Users },
   ],
+  'Technician': [
+    { name: 'Dashboard',   path: '/dashboard',   icon: LayoutDashboard },
+    { name: 'Equipment',   path: '/equipment',   icon: Stethoscope },
+    { name: 'Maintenance', path: '/maintenance', icon: Wrench },
+    { name: 'Complaints',  path: '/complaints',  icon: AlertCircle },
+    { name: 'Calibration', path: '/calibration', icon: Gauge },
+  ],
   'Biomedical Engineer': [
     { name: 'Dashboard',   path: '/dashboard',   icon: LayoutDashboard },
     { name: 'Equipment',   path: '/equipment',   icon: Stethoscope },
@@ -48,6 +55,7 @@ const NAV_CONFIG = {
 
 const ROLE_COLORS = {
   'Admin':               'from-blue-600 to-indigo-700',
+  'Technician':          'from-blue-600 to-indigo-700',
   'Biomedical Engineer': 'from-blue-600 to-indigo-700',
   'Department Staff':    'from-blue-600 to-indigo-700',
   'Vendor':              'from-blue-600 to-indigo-700',
@@ -55,6 +63,7 @@ const ROLE_COLORS = {
 
 const ROLE_BADGES = {
   'Admin':               'bg-blue-100 text-blue-700',
+  'Technician':          'bg-blue-100 text-blue-700',
   'Biomedical Engineer': 'bg-blue-100 text-blue-700',
   'Department Staff':    'bg-blue-100 text-blue-700',
   'Vendor':              'bg-blue-100 text-blue-700',
@@ -80,7 +89,7 @@ const getPageTitle = (pathname, role) => {
   };
   if (pathname === '/equipment') {
     if (role === 'Vendor') return 'Assigned Equipment';
-    if (role === 'Department Staff' || role === 'Biomedical Engineer') return 'My Equipment';
+    if (role === 'Department Staff' || role === 'Technician' || role === 'Biomedical Engineer') return 'My Equipment';
     return 'Equipment';
   }
   if (pathname.startsWith('/equipment/')) return 'Equipment Details';

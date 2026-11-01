@@ -91,15 +91,15 @@ export default function App() {
               <ProtectedRoute><RoleProtectedRoute allowedRoles={['Admin']}><Users /></RoleProtectedRoute></ProtectedRoute>
             } />
 
-            {/* Admin + Engineer pages */}
+            {/* Admin + Technician pages */}
             <Route path="/maintenance" element={
-              <ProtectedRoute><RoleProtectedRoute allowedRoles={['Admin', 'Biomedical Engineer']}><Maintenance /></RoleProtectedRoute></ProtectedRoute>
+              <ProtectedRoute><RoleProtectedRoute allowedRoles={['Admin', 'Technician', 'Biomedical Engineer']}><Maintenance /></RoleProtectedRoute></ProtectedRoute>
             } />
             <Route path="/complaints" element={
-              <ProtectedRoute><RoleProtectedRoute allowedRoles={['Admin', 'Biomedical Engineer']}><Complaints /></RoleProtectedRoute></ProtectedRoute>
+              <ProtectedRoute><RoleProtectedRoute allowedRoles={['Admin', 'Technician', 'Biomedical Engineer']}><Complaints /></RoleProtectedRoute></ProtectedRoute>
             } />
             <Route path="/calibration" element={
-              <ProtectedRoute><RoleProtectedRoute allowedRoles={['Admin', 'Biomedical Engineer']}><Calibration /></RoleProtectedRoute></ProtectedRoute>
+              <ProtectedRoute><RoleProtectedRoute allowedRoles={['Admin', 'Technician', 'Biomedical Engineer']}><Calibration /></RoleProtectedRoute></ProtectedRoute>
             } />
 
             {/* Department Staff pages */}
