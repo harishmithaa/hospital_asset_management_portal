@@ -11,6 +11,15 @@ const statusColors = {
   'Cancelled': 'bg-slate-100 text-slate-500',
 };
 
+const isPastDue = (dateStr) => {
+  if (!dateStr) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr);
+  target.setHours(0, 0, 0, 0);
+  return target.getTime() < today.getTime();
+};
+
 // ─── Log Calibration Modal ────────────────────────────────────────────────
 function CalibrationModal({ onClose, onSaved }) {
   const { user } = useAuth();
@@ -183,7 +192,7 @@ export default function Calibration() {
                     </td>
                     <td className="py-3 px-4 text-xs text-slate-600">{new Date(r.calibrationDate).toLocaleDateString()}</td>
                     <td className="py-3 px-4 text-xs">
-                      <span className={new Date(r.dueDate) < new Date() && r.status !== 'Completed' ? 'text-red-600 font-semibold' : 'text-slate-600'}>
+                      <span className={isPastDue(r.dueDate) && r.status !== 'Completed' ? 'text-red-600 font-semibold' : 'text-slate-600'}>
                         {new Date(r.dueDate).toLocaleDateString()}
                       </span>
                     </td>

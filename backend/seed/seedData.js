@@ -16,9 +16,18 @@ const AssetTransfer = require('../models/AssetTransfer');
 const DisposalRecord = require('../models/DisposalRecord');
 const Notification = require('../models/Notification');
 
-const getRandItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
-const daysFromNow = (n) => new Date(Date.now() + n * 24 * 60 * 60 * 1000);
-const daysAgo = (n) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
+const daysFromNow = (n) => {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  d.setHours(12, 0, 0, 0);
+  return d;
+};
+const daysAgo = (n) => {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  d.setHours(12, 0, 0, 0);
+  return d;
+};
 
 const seedData = async () => {
   try {

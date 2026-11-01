@@ -14,6 +14,24 @@ const STATUS_COLORS = {
   'Disposed':          'bg-slate-100 text-slate-500 border-slate-200',
 };
 
+const isPastDue = (dateStr) => {
+  if (!dateStr) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr);
+  target.setHours(0, 0, 0, 0);
+  return target.getTime() < today.getTime();
+};
+
+const isToday = (dateStr) => {
+  if (!dateStr) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr);
+  target.setHours(0, 0, 0, 0);
+  return target.getTime() === today.getTime();
+};
+
 const StatusBadge = ({ status }) => (
   <span className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border ${STATUS_COLORS[status] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
     {status}
@@ -317,9 +335,19 @@ export default function Equipment() {
                     <td className="py-3 px-4"><StatusBadge status={e.currentStatus} /></td>
                     <td className="py-3 px-4 text-xs text-slate-600 hidden lg:table-cell">
                       {e.nextMaintenanceDate ? (
-                        <span className={new Date(e.nextMaintenanceDate) < new Date() ? 'text-red-600 font-semibold' : ''}>
-                          {new Date(e.nextMaintenanceDate).toLocaleDateString()}
-                        </span>
+                        isPastDue(e.nextMaintenanceDate) ? (
+                          <span className="text-red-600 font-semibold flex items-center gap-1.5">
+                            {new Date(e.nextMaintenanceDate).toLocaleDateString()}
+                            <span className="text-[9px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold uppercase">Overdue</span>
+                          </span>
+                        ) : isToday(e.nextMaintenanceDate) ? (
+                          <span className="text-blue-700 font-bold flex items-center gap-1.5">
+                            {new Date(e.nextMaintenanceDate).toLocaleDateString()}
+                            <span className="text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold uppercase">Today</span>
+                          </span>
+                        ) : (
+                          <span>{new Date(e.nextMaintenanceDate).toLocaleDateString()}</span>
+                        )
                       ) : '—'}
                     </td>
                     {isAdmin && (
