@@ -5,10 +5,14 @@ const {
   getCalibrationById, 
   createCalibration, 
   updateCalibration, 
-  deleteCalibration 
+  deleteCalibration,
+  getCalibrationCertificate
 } = require('../controllers/calibrationController');
 const { protect, authorize } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+
+// Public/Direct certificate view and download endpoint
+router.get('/:id/certificate', getCalibrationCertificate);
 
 router.route('/')
   .get(protect, getCalibrations)

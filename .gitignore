@@ -21,9 +21,10 @@ mongodb_data/
 *.wt
 mongod.lock
 
-# Uploaded media (preserve directory structure via .gitkeep)
+# Uploaded media (preserve directory structure and keep calibration certificate PDFs)
 backend/uploads/*
 !backend/uploads/.gitkeep
+!backend/uploads/*.pdf
 
 # Windows / OS metadata & shortcuts
 hospital_lifecycle_management.lnk

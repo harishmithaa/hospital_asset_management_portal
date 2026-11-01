@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { calibrationAPI, equipmentAPI, authAPI, getFileUrl } from '../services/api';
+import CertificateModal from '../components/CertificateModal';
 import {
   Gauge, Plus, X, AlertTriangle, CheckCircle2,
   FileText, Calendar, Clock, ChevronRight, Search,
@@ -385,7 +386,7 @@ function ScheduleNextModal({ completedRecord, equipment, technicians, onClose, o
 }
 
 // ─── Modal 3: Equipment Calibration History & Log Drawer ──────────────────
-function EquipmentHistoryDrawer({ equipment, records, technicians, onClose, onRefresh, onLogNew, onCompletePending }) {
+function EquipmentHistoryDrawer({ equipment, records, technicians, onClose, onRefresh, onLogNew, onCompletePending, onViewCertificate }) {
   const { user } = useAuth();
   const isEngineer = user?.role === 'Technician' || user?.role === 'Biomedical Engineer';
   const now = new Date();
@@ -569,15 +570,14 @@ function EquipmentHistoryDrawer({ equipment, records, technicians, onClose, onRe
 
                   <div className="flex flex-col items-end gap-2 flex-shrink-0">
                     {r.certificateUpload ? (
-                      <a
-                        href={getFileUrl(r.certificateUpload)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 rounded-lg transition-colors"
+                      <button
+                        onClick={() => onViewCertificate ? onViewCertificate(r, equipment) : window.open(getFileUrl(r.certificateUpload, r._id), '_blank')}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-300 rounded-lg transition-all shadow-xs hover:shadow-sm cursor-pointer"
+                        title="View Official Certificate"
                       >
                         <FileText className="h-3.5 w-3.5 text-purple-600" />
                         <span>Certificate</span>
-                      </a>
+                      </button>
                     ) : r.status !== 'Completed' ? (
                       isEngineer ? (
                         <button
@@ -626,6 +626,7 @@ export default function Calibration() {
   const [selectedDrawerEquipment, setSelectedDrawerEquipment] = useState(null);
   const [logModalState, setLogModalState] = useState(null); // { equipment, pendingRecord }
   const [scheduleModalState, setScheduleModalState] = useState(null); // { completedRecord, equipment }
+  const [certificateModalState, setCertificateModalState] = useState(null); // { record, equipment }
 
   const loadData = async () => {
     setLoading(true);
@@ -1014,14 +1015,15 @@ export default function Calibration() {
                       <td className="py-3.5 px-4 text-xs text-slate-600">{formatTechName(r.engineer?.name)}</td>
                       <td className="py-3.5 px-4">
                         {r.certificateUpload ? (
-                          <a
-                            href={getFileUrl(r.certificateUpload)}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-purple-600 hover:underline"
+                          <button
+                            onClick={() => {
+                              const eq = equipmentList.find(e => e._id === (r.equipment?._id || r.equipment));
+                              setCertificateModalState({ record: r, equipment: eq });
+                            }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition-colors cursor-pointer"
                           >
-                            <FileText className="h-3.5 w-3.5" /> View PDF
-                          </a>
+                            <FileText className="h-3.5 w-3.5 text-purple-600" /> View Certificate
+                          </button>
                         ) : (
                           <span className="text-[10px] text-slate-400 italic">No document</span>
                         )}
@@ -1045,6 +1047,7 @@ export default function Calibration() {
           onRefresh={loadData}
           onLogNew={handleStartLogNew}
           onCompletePending={handleStartCompletePending}
+          onViewCertificate={(rec, eq) => setCertificateModalState({ record: rec, equipment: eq })}
         />
       )}
 
@@ -1069,6 +1072,14 @@ export default function Calibration() {
           onScheduled={handleNextScheduled}
         />
       )}
+
+      {/* ── Modal 4: Official Certificate Document Viewer ───────────────────── */}
+      <CertificateModal
+        isOpen={!!certificateModalState}
+        onClose={() => setCertificateModalState(null)}
+        record={certificateModalState?.record}
+        equipment={certificateModalState?.equipment}
+      />
     </div>
   );
 }

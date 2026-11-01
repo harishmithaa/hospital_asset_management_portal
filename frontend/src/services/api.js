@@ -7,7 +7,10 @@ export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/ap
 export const SERVER_URL = import.meta.env.VITE_SERVER_URL || API_URL.replace(/\/api\/?$/, '');
 
 // Helper to construct full URL for images, PDFs, certificates
-export const getFileUrl = (filePath) => {
+export const getFileUrl = (filePath, recordId = null) => {
+  if (recordId) {
+    return `${API_URL}/calibration/${recordId}/certificate`;
+  }
   if (!filePath) return '';
   if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
   const cleanPath = filePath.startsWith('/') ? filePath : `/${filePath}`;

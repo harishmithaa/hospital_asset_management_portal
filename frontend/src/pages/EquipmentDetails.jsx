@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import QRGeneratorModal from '../components/QRGeneratorModal';
+import CertificateModal from '../components/CertificateModal';
 import { equipmentAPI, departmentAPI, authAPI, vendorAPI, maintenanceAPI, complaintAPI, calibrationAPI, transferAPI, disposalAPI, getFileUrl } from '../services/api';
 import {
   ArrowLeft, Stethoscope, Building2, User, Calendar, DollarSign, Wrench,
@@ -352,6 +353,7 @@ export default function EquipmentDetails() {
   const [showAddMaint, setShowAddMaint] = useState(false);
   const [showAddCal, setShowAddCal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [certModalRecord, setCertModalRecord] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -667,9 +669,12 @@ export default function EquipmentDetails() {
                         </div>
                       </div>
                       {c.certificateUpload ? (
-                        <a href={getFileUrl(c.certificateUpload)} target="_blank" rel="noreferrer" className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 rounded-lg transition-colors shadow-xs">
+                        <button
+                          onClick={() => setCertModalRecord(c)}
+                          className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg transition-colors shadow-xs cursor-pointer"
+                        >
                           <FileText className="h-3.5 w-3.5 text-purple-600" /> View Certificate (PDF)
-                        </a>
+                        </button>
                       ) : (
                         <p className="mt-2 text-[11px] text-slate-400 italic">Certificate document pending submission</p>
                       )}
@@ -808,6 +813,12 @@ export default function EquipmentDetails() {
       {showAddMaint && <AddMaintenanceModal equipment={equipment} engineers={engineers} onClose={() => setShowAddMaint(false)} onSaved={() => { setShowAddMaint(false); load(); }} />}
       {showAddCal && <AddCalibrationModal equipment={equipment} onClose={() => setShowAddCal(false)} onSaved={() => { setShowAddCal(false); load(); }} />}
       <QRGeneratorModal equipment={equipment} isOpen={showQRModal} onClose={() => setShowQRModal(false)} />
+      <CertificateModal
+        isOpen={!!certModalRecord}
+        onClose={() => setCertModalRecord(null)}
+        record={certModalRecord}
+        equipment={equipment}
+      />
     </div>
   );
 }
