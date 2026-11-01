@@ -14,10 +14,8 @@ exports.getCalibrations = async (req, res) => {
     if (equipment) query.equipment = equipment;
     if (engineer) query.engineer = engineer;
 
-    // Role restrictions
-    if (req.user.role === 'Technician' || req.user.role === 'Biomedical Engineer') {
-      query.engineer = req.user.id;
-    }
+    // Role restrictions: filter by engineer only if requested in query
+    if (engineer) query.engineer = engineer;
 
     // Auto-update calibration statuses based on due date:
     // 1. If dueDate is past (< now) and not Completed -> Overdue
@@ -76,6 +74,14 @@ exports.getCalibrationById = async (req, res) => {
 // @access  Private/Admin/Engineer
 exports.createCalibration = async (req, res) => {
   try {
+    // Admins cannot log calibrations; only technicians can submit calibration records
+    if (req.user.role === 'Admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Administrators cannot log calibrations. Only assigned Technicians can perform and submit calibration records.'
+      });
+    }
+
     const { equipment: equipmentId, calibrationDate, dueDate, engineer, vendor, result, observations, status } = req.body;
 
     const equipment = await Equipment.findById(equipmentId);
@@ -151,6 +157,13 @@ exports.createCalibration = async (req, res) => {
 // @access  Private/Admin/Engineer
 exports.updateCalibration = async (req, res) => {
   try {
+    if (req.user.role === 'Admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Administrators cannot submit or modify calibration test logs.'
+      });
+    }
+
     let record = await Calibration.findById(req.params.id);
 
     if (!record) {

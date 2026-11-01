@@ -390,9 +390,12 @@ export default function EquipmentDetails() {
   const scheduledCal = (history.calibrations || []).find(c => c.status === 'Scheduled');
   const lastCalDate = equipment.lastCalibrationDate || latestCompletedCal?.calibrationDate || null;
   const nextCalDate = equipment.nextCalibrationDate || pendingCal?.dueDate || scheduledCal?.dueDate || latestCompletedCal?.dueDate || (() => {
-    const base = equipment.installationDate || equipment.purchaseDate || equipment.createdAt || new Date();
+    const base = equipment.lastCalibrationDate || new Date();
     const d = new Date(base);
     d.setFullYear(d.getFullYear() + 1);
+    while (d <= now) {
+      d.setFullYear(d.getFullYear() + 1);
+    }
     return d;
   })();
 

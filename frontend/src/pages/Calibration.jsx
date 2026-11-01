@@ -48,7 +48,7 @@ function LogCalibrationModal({ equipment, pendingRecord, technicians, onClose, o
     equipment: equipment?._id || pendingRecord?.equipment?._id || '',
     calibrationDate: new Date().toISOString().slice(0, 10),
     dueDate: pendingRecord?.dueDate ? new Date(pendingRecord.dueDate).toISOString().slice(0, 10) : defaultDueDate(),
-    engineer: pendingRecord?.engineer?._id || user?._id || '',
+    engineer: pendingRecord?.engineer?._id || (technicians.find(t => t._id === user?._id)?._id) || technicians[0]?._id || '',
     result: 'Pass',
     observations: pendingRecord?.observations || ''
   });
@@ -174,9 +174,10 @@ function LogCalibrationModal({ equipment, pendingRecord, technicians, onClose, o
               onChange={e => setForm(f => ({ ...f, engineer: e.target.value }))}
               className="input-field"
             >
-              <option value={user?._id}>Current ({formatTechName(user?.name)})</option>
-              {technicians.filter(t => t._id !== user?._id).map(t => (
-                <option key={t._id} value={t._id}>{formatTechName(t.name)}</option>
+              {technicians.map(t => (
+                <option key={t._id} value={t._id}>
+                  {formatTechName(t.name)} {t._id === user?._id ? '(You)' : ''}
+                </option>
               ))}
             </select>
           </div>
@@ -257,7 +258,7 @@ function ScheduleNextModal({ completedRecord, equipment, technicians, onClose, o
 
   const [form, setForm] = useState({
     dueDate: calculateDefault(12),
-    engineer: completedRecord?.engineer?._id || user?._id || '',
+    engineer: completedRecord?.engineer?._id || (technicians.find(t => t._id === user?._id)?._id) || technicians[0]?._id || '',
     observations: 'Scheduled periodic recalibration cycle.'
   });
   const [saving, setSaving] = useState(false);
@@ -341,9 +342,10 @@ function ScheduleNextModal({ completedRecord, equipment, technicians, onClose, o
               onChange={e => setForm(f => ({ ...f, engineer: e.target.value }))}
               className="input-field"
             >
-              <option value={user?._id}>{formatTechName(user?.name)} (Current)</option>
-              {technicians.filter(t => t._id !== user?._id).map(t => (
-                <option key={t._id} value={t._id}>{formatTechName(t.name)}</option>
+              {technicians.map(t => (
+                <option key={t._id} value={t._id}>
+                  {formatTechName(t.name)} {t._id === user?._id ? '(You)' : ''}
+                </option>
               ))}
             </select>
           </div>
@@ -384,6 +386,8 @@ function ScheduleNextModal({ completedRecord, equipment, technicians, onClose, o
 
 // ─── Modal 3: Equipment Calibration History & Log Drawer ──────────────────
 function EquipmentHistoryDrawer({ equipment, records, technicians, onClose, onRefresh, onLogNew, onCompletePending }) {
+  const { user } = useAuth();
+  const isEngineer = user?.role === 'Technician' || user?.role === 'Biomedical Engineer';
   const now = new Date();
   const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
@@ -400,6 +404,9 @@ function EquipmentHistoryDrawer({ equipment, records, technicians, onClose, onRe
       const base = equipment.installationDate || equipment.purchaseDate || equipment.createdAt || new Date();
       const d = new Date(base);
       d.setFullYear(d.getFullYear() + 1);
+      while (d <= now) {
+        d.setFullYear(d.getFullYear() + 1);
+      }
       return d;
     })();
 
@@ -472,30 +479,40 @@ function EquipmentHistoryDrawer({ equipment, records, technicians, onClose, onRe
                       {isOverdue ? 'Calibration Overdue!' : isFirst ? 'Initial Calibration Pending' : 'Recalibration Due Soon (Pending)'}
                     </p>
                     <p className="text-[11px] text-slate-600 mt-0.5">
-                      Due: {new Date(effectiveDueDate).toLocaleDateString()} · Perform verification test and upload certificate.
+                      Due: {new Date(effectiveDueDate).toLocaleDateString()} · {isEngineer ? 'Perform verification test and upload certificate.' : 'Awaiting technician verification test & certificate.'}
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => pendingRecord ? onCompletePending(pendingRecord) : onLogNew(equipment)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow-sm flex-shrink-0 ${
-                    isOverdue ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'
-                  }`}
-                >
-                  {isFirst ? 'Log Initial Test →' : 'Submit Document →'}
-                </button>
+                {isEngineer ? (
+                  <button
+                    onClick={() => pendingRecord ? onCompletePending(pendingRecord) : onLogNew(equipment)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow-sm flex-shrink-0 ${
+                      isOverdue ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'
+                    }`}
+                  >
+                    {isFirst ? 'Log Initial Test →' : 'Submit Document →'}
+                  </button>
+                ) : (
+                  <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex-shrink-0 ${
+                    isOverdue ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    Pending Technician Action
+                  </span>
+                )}
               </div>
             );
           })()}
 
           <div className="flex justify-between items-center pt-1">
             <span className="text-xs font-bold text-slate-700">Calibration History ({eqRecords.length})</span>
-            <button
-              onClick={() => onLogNew(equipment)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-xs font-bold hover:bg-purple-700 transition-colors shadow-sm"
-            >
-              <Plus className="h-3.5 w-3.5" /> Log / Schedule Test
-            </button>
+            {isEngineer && (
+              <button
+                onClick={() => onLogNew(equipment)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-xs font-bold hover:bg-purple-700 transition-colors shadow-sm"
+              >
+                <Plus className="h-3.5 w-3.5" /> Log / Schedule Test
+              </button>
+            )}
           </div>
         </div>
 
@@ -505,13 +522,17 @@ function EquipmentHistoryDrawer({ equipment, records, technicians, onClose, onRe
             <div className="text-center py-12 text-slate-400">
               <Gauge className="h-10 w-10 text-slate-300 mx-auto mb-2" />
               <p className="text-sm font-medium text-slate-500">No calibration logs on record</p>
-              <p className="text-xs text-slate-400 mt-1">Perform the first precision test and upload its certificate.</p>
-              <button
-                onClick={() => onLogNew(equipment)}
-                className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg text-xs font-bold hover:bg-purple-700"
-              >
-                Log First Calibration
-              </button>
+              <p className="text-xs text-slate-400 mt-1">
+                {isEngineer ? 'Perform the first precision test and upload its certificate.' : 'Awaiting technician to submit initial calibration certificate.'}
+              </p>
+              {isEngineer && (
+                <button
+                  onClick={() => onLogNew(equipment)}
+                  className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg text-xs font-bold hover:bg-purple-700"
+                >
+                  Log First Calibration
+                </button>
+              )}
             </div>
           ) : (
             eqRecords.map(r => (
@@ -558,12 +579,18 @@ function EquipmentHistoryDrawer({ equipment, records, technicians, onClose, onRe
                         <span>Certificate</span>
                       </a>
                     ) : r.status !== 'Completed' ? (
-                      <button
-                        onClick={() => onCompletePending(r)}
-                        className="px-2.5 py-1 text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors"
-                      >
-                        Upload Doc
-                      </button>
+                      isEngineer ? (
+                        <button
+                          onClick={() => onCompletePending(r)}
+                          className="px-2.5 py-1 text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors"
+                        >
+                          Upload Doc
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-amber-600 font-semibold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                          Pending Doc
+                        </span>
+                      )
                     ) : (
                       <span className="text-[10px] text-slate-400 italic">No Doc</span>
                     )}
@@ -641,6 +668,9 @@ export default function Calibration() {
         const base = eq.lastCalibrationDate || eq.installationDate || eq.purchaseDate || eq.createdAt || new Date();
         const d = new Date(base);
         d.setFullYear(d.getFullYear() + 1);
+        while (d <= now) {
+          d.setFullYear(d.getFullYear() + 1);
+        }
         return d.toISOString();
       };
 
@@ -742,7 +772,7 @@ export default function Calibration() {
             Precision verification, certificate document archiving, and recurring calibration cycles
           </p>
         </div>
-        {(isAdmin || isEngineer) && (
+        {isEngineer && (
           <button
             onClick={() => setLogModalState({ equipment: equipmentList[0], pendingRecord: null })}
             className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-xl text-xs font-bold hover:bg-purple-700 transition-colors shadow-sm self-start sm:self-auto"
