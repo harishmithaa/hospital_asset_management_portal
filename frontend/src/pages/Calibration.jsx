@@ -393,6 +393,16 @@ function EquipmentHistoryDrawer({ equipment, records, technicians, onClose, onRe
   const completedRecords = eqRecords.filter(r => r.status === 'Completed');
   const latestCompleted = completedRecords[0];
 
+  const effectiveDueDate = pendingRecord?.dueDate ||
+    latestCompleted?.dueDate ||
+    equipment.nextCalibrationDate ||
+    (() => {
+      const base = equipment.installationDate || equipment.purchaseDate || equipment.createdAt || new Date();
+      const d = new Date(base);
+      d.setFullYear(d.getFullYear() + 1);
+      return d;
+    })();
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-end p-0 backdrop-blur-xs transition-opacity">
       <div className="bg-white w-full max-w-xl h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
@@ -429,55 +439,54 @@ function EquipmentHistoryDrawer({ equipment, records, technicians, onClose, onRe
                   ? new Date(latestCompleted.calibrationDate).toLocaleDateString()
                   : equipment.lastCalibrationDate
                   ? new Date(equipment.lastCalibrationDate).toLocaleDateString()
-                  : 'Not Recorded'}
+                  : <span className="text-slate-400 italic">None (First Calibration Pending)</span>}
               </p>
             </div>
             <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Next Due Date</p>
               <p className={`text-sm font-semibold mt-0.5 ${
-                pendingRecord && isPastDue(pendingRecord.dueDate)
+                effectiveDueDate && isPastDue(effectiveDueDate)
                   ? 'text-red-600 font-bold'
                   : 'text-slate-800'
               }`}>
-                {pendingRecord?.dueDate
-                  ? new Date(pendingRecord.dueDate).toLocaleDateString()
-                  : latestCompleted?.dueDate
-                  ? new Date(latestCompleted.dueDate).toLocaleDateString()
-                  : equipment.nextCalibrationDate
-                  ? new Date(equipment.nextCalibrationDate).toLocaleDateString()
-                  : 'Not Scheduled'}
+                {new Date(effectiveDueDate).toLocaleDateString()}
               </p>
             </div>
           </div>
 
           {/* Pending / Overdue Task Alert */}
-          {pendingRecord && (
-            <div className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 ${
-              isPastDue(pendingRecord.dueDate)
-                ? 'bg-red-50 border-red-200'
-                : 'bg-blue-50 border-blue-200'
-            }`}>
-              <div className="flex items-start gap-2.5">
-                <Clock className={`h-4 w-4 mt-0.5 flex-shrink-0 ${isPastDue(pendingRecord.dueDate) ? 'text-red-600' : 'text-blue-600'}`} />
-                <div>
-                  <p className={`text-xs font-bold ${isPastDue(pendingRecord.dueDate) ? 'text-red-900' : 'text-blue-900'}`}>
-                    {isPastDue(pendingRecord.dueDate) ? 'Calibration Overdue!' : 'Recalibration Pending'}
-                  </p>
-                  <p className="text-[11px] text-slate-600 mt-0.5">
-                    Due: {new Date(pendingRecord.dueDate).toLocaleDateString()} · Submit certificate to mark Completed.
-                  </p>
+          {(pendingRecord || !latestCompleted) && (() => {
+            const isOverdue = isPastDue(effectiveDueDate);
+            const isFirst = !latestCompleted && !equipment.lastCalibrationDate;
+
+            return (
+              <div className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 ${
+                isOverdue
+                  ? 'bg-red-50 border-red-200'
+                  : 'bg-amber-50 border-amber-200'
+              }`}>
+                <div className="flex items-start gap-2.5">
+                  <Clock className={`h-4 w-4 mt-0.5 flex-shrink-0 ${isOverdue ? 'text-red-600' : 'text-amber-600'}`} />
+                  <div>
+                    <p className={`text-xs font-bold ${isOverdue ? 'text-red-900' : 'text-amber-900'}`}>
+                      {isOverdue ? 'Calibration Overdue!' : isFirst ? 'Initial Calibration Pending' : 'Recalibration Due Soon (Pending)'}
+                    </p>
+                    <p className="text-[11px] text-slate-600 mt-0.5">
+                      Due: {new Date(effectiveDueDate).toLocaleDateString()} · Perform verification test and upload certificate.
+                    </p>
+                  </div>
                 </div>
+                <button
+                  onClick={() => pendingRecord ? onCompletePending(pendingRecord) : onLogNew(equipment)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow-sm flex-shrink-0 ${
+                    isOverdue ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'
+                  }`}
+                >
+                  {isFirst ? 'Log Initial Test →' : 'Submit Document →'}
+                </button>
               </div>
-              <button
-                onClick={() => onCompletePending(pendingRecord)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow-sm flex-shrink-0 ${
-                  isPastDue(pendingRecord.dueDate) ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-              >
-                Submit Document &rarr;
-              </button>
-            </div>
-          )}
+            );
+          })()}
 
           <div className="flex justify-between items-center pt-1">
             <span className="text-xs font-bold text-slate-700">Calibration History ({eqRecords.length})</span>
@@ -619,40 +628,50 @@ export default function Calibration() {
     const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     equipmentList.forEach(eq => {
+      if (eq.isDisposed) return;
+
       const eqRecords = records.filter(r => (r.equipment?._id || r.equipment) === eq._id);
       const pendingOrOverdue = eqRecords.find(r => r.status === 'Pending' || r.status === 'Overdue');
       const scheduled = eqRecords.find(r => r.status === 'Scheduled');
       const completed = eqRecords.filter(r => r.status === 'Completed');
       const latestCompleted = completed[0];
-      const nextDueDate = pendingOrOverdue?.dueDate || scheduled?.dueDate || eq.nextCalibrationDate || latestCompleted?.dueDate;
 
-      let status = 'Not Calibrated';
-      if (!nextDueDate && !latestCompleted) {
-        status = 'Not Calibrated';
-      } else if (nextDueDate) {
+      // Fallback: Next calibration due date is guaranteed for every item!
+      const calculateDefaultNextDue = () => {
+        const base = eq.lastCalibrationDate || eq.installationDate || eq.purchaseDate || eq.createdAt || new Date();
+        const d = new Date(base);
+        d.setFullYear(d.getFullYear() + 1);
+        return d.toISOString();
+      };
+
+      const nextDueDate = pendingOrOverdue?.dueDate || scheduled?.dueDate || eq.nextCalibrationDate || calculateDefaultNextDue();
+      const lastDate = latestCompleted?.calibrationDate || eq.lastCalibrationDate || null;
+
+      let status = 'Pending';
+      if (nextDueDate) {
         const due = new Date(nextDueDate);
         if (due < now) {
           status = 'Overdue';
         } else if (due <= oneWeekFromNow) {
           // Within 1 week of due date -> turns to Pending!
           status = 'Pending';
-        } else if (latestCompleted) {
+        } else if (lastDate) {
+          // Has previous completed calibration and > 1 week away -> Completed
           status = 'Completed';
         } else {
-          status = 'Scheduled';
+          // Has never been calibrated before -> Initial Calibration is Pending!
+          status = 'Pending';
         }
-      } else if (latestCompleted) {
-        status = 'Completed';
       }
 
       map[eq._id] = {
         equipment: eq,
         records: eqRecords,
         status,
-        lastDate: latestCompleted?.calibrationDate || eq.lastCalibrationDate,
+        lastDate,
         nextDueDate,
         latestCompleted,
-        pending: pendingOrOverdue || (status === 'Pending' ? (scheduled || latestCompleted) : null),
+        pending: pendingOrOverdue || (status === 'Pending' ? (scheduled || latestCompleted || { equipment: eq, dueDate: nextDueDate }) : null),
         scheduled
       };
     });
@@ -662,6 +681,7 @@ export default function Calibration() {
   // Filtered equipment
   const filteredEquipment = useMemo(() => {
     return equipmentList.filter(eq => {
+      if (eq.isDisposed) return false;
       const data = equipmentCalibrationMap[eq._id];
       const matchesSearch =
         eq.name?.toLowerCase().includes(search.toLowerCase()) ||

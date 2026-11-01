@@ -388,12 +388,17 @@ export default function EquipmentDetails() {
   const latestCompletedCal = completedCals[0];
   const pendingCal = (history.calibrations || []).find(c => c.status === 'Pending' || c.status === 'Overdue');
   const scheduledCal = (history.calibrations || []).find(c => c.status === 'Scheduled');
-  const lastCalDate = equipment.lastCalibrationDate || latestCompletedCal?.calibrationDate;
-  const nextCalDate = equipment.nextCalibrationDate || pendingCal?.dueDate || scheduledCal?.dueDate || latestCompletedCal?.dueDate;
+  const lastCalDate = equipment.lastCalibrationDate || latestCompletedCal?.calibrationDate || null;
+  const nextCalDate = equipment.nextCalibrationDate || pendingCal?.dueDate || scheduledCal?.dueDate || latestCompletedCal?.dueDate || (() => {
+    const base = equipment.installationDate || equipment.purchaseDate || equipment.createdAt || new Date();
+    const d = new Date(base);
+    d.setFullYear(d.getFullYear() + 1);
+    return d;
+  })();
 
   const nextCalDue = nextCalDate ? new Date(nextCalDate) : null;
   const calDiffDays = nextCalDue ? Math.ceil((nextCalDue - now) / (1000 * 60 * 60 * 24)) : null;
-  const calStatus = !nextCalDue ? null : calDiffDays < 0 ? 'Overdue' : calDiffDays <= 7 ? 'Pending' : 'Completed';
+  const calStatus = !nextCalDue ? 'Pending' : calDiffDays < 0 ? 'Overdue' : calDiffDays <= 7 ? 'Pending' : lastCalDate ? 'Completed' : 'Pending';
 
   return (
     <div className="space-y-5 max-w-6xl mx-auto">
@@ -502,7 +507,7 @@ export default function EquipmentDetails() {
                   {[
                     ['Last Maintenance', equipment.lastMaintenanceDate ? new Date(equipment.lastMaintenanceDate).toLocaleDateString() : 'Not recorded'],
                     ['Next Maintenance', equipment.nextMaintenanceDate ? new Date(equipment.nextMaintenanceDate).toLocaleDateString() : 'Not scheduled'],
-                    ['Last Calibration', lastCalDate ? new Date(lastCalDate).toLocaleDateString() : 'Not recorded'],
+                    ['Last Calibration', lastCalDate ? new Date(lastCalDate).toLocaleDateString() : 'None (First Calibration Pending)'],
                     ['Next Calibration', nextCalDate ? (
                       <span className="flex items-center gap-1.5 justify-end">
                         <span>{new Date(nextCalDate).toLocaleDateString()}</span>

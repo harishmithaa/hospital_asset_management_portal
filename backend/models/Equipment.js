@@ -120,6 +120,17 @@ const EquipmentSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Ensure nextCalibrationDate is ALWAYS set for every non-disposed equipment
+EquipmentSchema.pre('save', function(next) {
+  if (!this.nextCalibrationDate && !this.isDisposed) {
+    const base = this.lastCalibrationDate || this.installationDate || this.purchaseDate || new Date();
+    const d = new Date(base);
+    d.setFullYear(d.getFullYear() + 1);
+    this.nextCalibrationDate = d;
+  }
+  next();
+});
+
 // Auto-generate sequential Equipment ID (e.g., EQ-2026-001)
 EquipmentSchema.pre('save', async function(next) {
   if (!this.isNew) {

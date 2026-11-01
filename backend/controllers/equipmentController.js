@@ -69,6 +69,17 @@ exports.getEquipment = async (req, res) => {
       .populate('supplierVendor', 'companyName contactPerson email phone')
       .sort({ createdAt: -1 });
 
+    // Guarantee nextCalibrationDate is present for every active equipment
+    for (const eq of equipmentList) {
+      if (!eq.nextCalibrationDate && !eq.isDisposed) {
+        const base = eq.lastCalibrationDate || eq.installationDate || eq.purchaseDate || eq.createdAt || new Date();
+        const d = new Date(base);
+        d.setFullYear(d.getFullYear() + 1);
+        eq.nextCalibrationDate = d;
+        Equipment.findByIdAndUpdate(eq._id, { nextCalibrationDate: d }).exec();
+      }
+    }
+
     res.json({ success: true, count: equipmentList.length, equipment: equipmentList });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -136,6 +147,15 @@ const processEquipmentDetails = async (equipment, res) => {
     if (latestDueCal?.dueDate && !equipment.nextCalibrationDate) {
       equipment.nextCalibrationDate = latestDueCal.dueDate;
     }
+  }
+
+  // Guarantee nextCalibrationDate is present for every active equipment
+  if (!equipment.nextCalibrationDate && !equipment.isDisposed) {
+    const base = equipment.lastCalibrationDate || equipment.installationDate || equipment.purchaseDate || equipment.createdAt || new Date();
+    const d = new Date(base);
+    d.setFullYear(d.getFullYear() + 1);
+    equipment.nextCalibrationDate = d;
+    Equipment.findByIdAndUpdate(equipment._id, { nextCalibrationDate: d }).exec();
   }
 
   res.json({

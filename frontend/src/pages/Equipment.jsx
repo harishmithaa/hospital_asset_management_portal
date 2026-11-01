@@ -61,6 +61,11 @@ function EquipmentModal({ equipment, departments, vendors, engineers, onClose, o
     amcStart: equipment?.amcStart ? equipment.amcStart.slice(0, 10) : '',
     amcEnd: equipment?.amcEnd ? equipment.amcEnd.slice(0, 10) : '',
     nextMaintenanceDate: equipment?.nextMaintenanceDate ? equipment.nextMaintenanceDate.slice(0, 10) : '',
+    nextCalibrationDate: equipment?.nextCalibrationDate ? equipment.nextCalibrationDate.slice(0, 10) : (() => {
+      const d = new Date();
+      d.setFullYear(d.getFullYear() + 1);
+      return d.toISOString().slice(0, 10);
+    })(),
     remarks: equipment?.remarks || '',
   });
   const [saving, setSaving] = useState(false);
@@ -111,6 +116,7 @@ function EquipmentModal({ equipment, departments, vendors, engineers, onClose, o
             <Field label="Installation Date" type="date" value={form.installationDate} onChange={v => set('installationDate', v)} />
             <Field label="Useful Life (years)" type="number" value={form.usefulLife} onChange={v => set('usefulLife', v)} />
             <Field label="Next Maintenance Date" type="date" value={form.nextMaintenanceDate} onChange={v => set('nextMaintenanceDate', v)} />
+            <Field label="Next Calibration Due Date *" type="date" value={form.nextCalibrationDate} onChange={v => set('nextCalibrationDate', v)} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
