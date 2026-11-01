@@ -12,7 +12,7 @@ router.get('/me', protect, getMe);
 
 // Admin-only routes for user management
 router.route('/users')
-  .get(protect, authorize('Admin'), getUsers)
+  .get(protect, authorize('Admin', 'Technician', 'Biomedical Engineer'), getUsers)
   .post(protect, authorize('Admin'), upload.single('profileImage'), createUser);
 
 router.route('/users/:id')

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { maintenanceAPI, equipmentAPI, authAPI } from '../services/api';
 import { Wrench, Plus, X, Filter, ChevronRight, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
@@ -196,10 +196,11 @@ function UpdateModal({ record, onClose, onSaved }) {
 export default function Maintenance() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isAdmin = user?.role === 'Admin';
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStatus, setFilterStatus] = useState(searchParams.get('status') || '');
   const [filterType, setFilterType] = useState('');
   const [showSchedule, setShowSchedule] = useState(false);
   const [showUpdate, setShowUpdate] = useState(null);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { equipmentAPI, departmentAPI, vendorAPI, authAPI } from '../services/api';
 import {
@@ -187,7 +187,10 @@ const Field = ({ label, type = 'text', value, onChange, placeholder }) => (
 export default function Equipment() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isAdmin = user?.role === 'Admin';
+  const isEngineer = user?.role === 'Technician' || user?.role === 'Biomedical Engineer';
+  const canManage = isAdmin || isEngineer;
 
   const [equipment, setEquipment] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -195,7 +198,7 @@ export default function Equipment() {
   const [engineers, setEngineers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStatus, setFilterStatus] = useState(searchParams.get('status') || '');
   const [filterDept, setFilterDept] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editEquipment, setEditEquipment] = useState(null);
@@ -211,7 +214,7 @@ export default function Equipment() {
       const [eq] = await Promise.all([equipmentAPI.getAll(params)]);
       if (eq.data.success) setEquipment(eq.data.equipment);
 
-      if (isAdmin && departments.length === 0) {
+      if (canManage && departments.length === 0) {
         const [depts, vends, users] = await Promise.all([departmentAPI.getAll(), vendorAPI.getAll(), authAPI.getUsers()]);
         if (depts.data.success) setDepartments(depts.data.departments);
         if (vends.data.success) setVendors(vends.data.vendors);
@@ -250,7 +253,7 @@ export default function Equipment() {
         <div className="flex-1">
           <p className="text-xs text-slate-500">{filtered.length} equipment found</p>
         </div>
-        {isAdmin && (
+        {canManage && (
           <button
             onClick={() => { setEditEquipment(null); setShowModal(true); }}
             className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-colors shadow-sm"

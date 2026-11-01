@@ -5,35 +5,34 @@ const User = require('../models/User');
 const protect = async (req, res, next) => {
   let token;
 
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      // Get token from header
-      token = req.headers.authorization.split(' ')[1];
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    const rawToken = req.headers.authorization.slice(7).trim();
+    if (rawToken && rawToken !== 'null' && rawToken !== 'undefined') {
+      token = rawToken.replace(/^"(.*)"$/, '$1').trim();
+      try {
+        // Verify token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'hams_secret_key_for_jwt_2026_auth');
 
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'hams_secret_key_for_jwt_2026_auth');
+        // Get user from the token (excluding password)
+        req.user = await User.findById(decoded.id).select('-password');
+        
+        if (!req.user) {
+          return res.status(401).json({ success: false, message: 'Not authorized, user not found' });
+        }
 
-      // Get user from the token (excluding password)
-      req.user = await User.findById(decoded.id).select('-password');
-      
-      if (!req.user) {
-        return res.status(401).json({ success: false, message: 'Not authorized, user not found' });
+        if (req.user.status === 'Inactive') {
+          return res.status(403).json({ success: false, message: 'Account is deactivated' });
+        }
+
+        return next();
+      } catch (error) {
+        console.error('JWT auth error:', error.message);
+        return res.status(401).json({ success: false, message: `Not authorized, token verification failed: ${error.message}` });
       }
-
-      if (req.user.status === 'Inactive') {
-        return res.status(403).json({ success: false, message: 'Account is deactivated' });
-      }
-
-      next();
-    } catch (error) {
-      console.error(error);
-      return res.status(401).json({ success: false, message: 'Not authorized, token failed' });
     }
   }
 
-  if (!token) {
-    return res.status(401).json({ success: false, message: 'Not authorized, no token provided' });
-  }
+  return res.status(401).json({ success: false, message: 'Not authorized, no token provided' });
 };
 
 // Grant access to specific roles

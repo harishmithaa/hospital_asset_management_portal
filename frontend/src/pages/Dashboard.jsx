@@ -107,7 +107,7 @@ function AdminDashboard() {
   const working = equipment.filter(e => e.currentStatus === 'Working').length;
   const underMaint = equipment.filter(e => e.currentStatus === 'Under Maintenance').length;
   const outOfService = equipment.filter(e => e.currentStatus === 'Out of Service').length;
-  const openComplaints = complaints.filter(c => ['Open','Assigned','In Progress'].includes(c.status)).length;
+  const openComplaints = complaints.filter(c => !['Completed','Closed','Cancelled'].includes(c.status)).length;
   const maintDue = equipment.filter(e => e.nextMaintenanceDate && new Date(e.nextMaintenanceDate) <= in7).length;
   const calDue = equipment.filter(e => e.nextCalibrationDate && new Date(e.nextCalibrationDate) <= in7).length;
 
@@ -131,6 +131,8 @@ function AdminDashboard() {
     { name: 'Open', value: complaints.filter(c => c.status === 'Open').length },
     { name: 'Assigned', value: complaints.filter(c => c.status === 'Assigned').length },
     { name: 'In Progress', value: complaints.filter(c => c.status === 'In Progress').length },
+    { name: 'Waiting for Vendor', value: complaints.filter(c => c.status === 'Waiting for Vendor').length },
+    { name: 'Waiting for Parts', value: complaints.filter(c => c.status === 'Waiting for Parts').length },
     { name: 'Completed', value: complaints.filter(c => c.status === 'Completed').length },
   ].filter(d => d.value > 0);
 
@@ -363,8 +365,8 @@ function EngineerDashboard() {
   const overdueMaint = maintenance.filter(m => m.status === 'Overdue');
   const maintDue = equipment.filter(e => e.nextMaintenanceDate && new Date(e.nextMaintenanceDate) <= in7).length;
   const calDue = calibrations.filter(c => c.status === 'Overdue' || c.status === 'Pending').length;
-  const completedThisMonth = maintenance.filter(m => {
-    if (m.status !== 'Completed') return false;
+  const completedMaint = maintenance.filter(m => m.status === 'Completed');
+  const completedThisMonth = completedMaint.filter(m => {
     const d = new Date(m.completedDate || m.scheduledDate);
     const now = new Date();
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
@@ -374,12 +376,53 @@ function EngineerDashboard() {
     <div className="space-y-6">
       {/* KPI */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-        <StatCard label="Assigned Equipment" value={equipment.length} icon={Stethoscope} color="bg-blue-500" />
-        <StatCard label="Maintenance Due (7d)" value={maintDue} icon={CalendarClock} color={maintDue > 0 ? 'bg-amber-500' : 'bg-slate-400'} />
-        <StatCard label="Open Complaints" value={openComplaints.length} icon={AlertCircle} color="bg-orange-500" />
-        <StatCard label="Overdue Maintenance" value={overdueMaint.length} icon={TriangleAlert} color={overdueMaint.length > 0 ? 'bg-red-500' : 'bg-slate-400'} />
-        <StatCard label="Calibration Due" value={calDue} icon={Gauge} color={calDue > 0 ? 'bg-purple-500' : 'bg-slate-400'} />
-        <StatCard label="Completed This Month" value={completedThisMonth} icon={CheckCircle} color="bg-emerald-500" />
+        <StatCard
+          label="Assigned Equipment"
+          value={equipment.length}
+          icon={Stethoscope}
+          color="bg-blue-500"
+          onClick={() => navigate('/equipment')}
+        />
+        <StatCard
+          label="Maintenance Due (7d)"
+          value={maintDue}
+          icon={CalendarClock}
+          color={maintDue > 0 ? 'bg-amber-500' : 'bg-slate-400'}
+          sub={maintDue > 0 ? { text: 'Schedule soon', color: 'text-amber-600' } : null}
+          onClick={() => navigate('/maintenance')}
+        />
+        <StatCard
+          label="Open Complaints"
+          value={openComplaints.length}
+          icon={AlertCircle}
+          color="bg-orange-500"
+          sub={openComplaints.length > 0 ? { text: 'Needs attention', color: 'text-orange-600' } : null}
+          onClick={() => navigate('/complaints')}
+        />
+        <StatCard
+          label="Overdue Maintenance"
+          value={overdueMaint.length}
+          icon={TriangleAlert}
+          color={overdueMaint.length > 0 ? 'bg-red-500' : 'bg-slate-400'}
+          sub={overdueMaint.length > 0 ? { text: 'Immediate action', color: 'text-red-600' } : null}
+          onClick={() => navigate('/maintenance?status=Overdue')}
+        />
+        <StatCard
+          label="Calibration Due"
+          value={calDue}
+          icon={Gauge}
+          color={calDue > 0 ? 'bg-purple-500' : 'bg-slate-400'}
+          sub={calDue > 0 ? { text: 'Pending / due', color: 'text-purple-600' } : null}
+          onClick={() => navigate('/calibration')}
+        />
+        <StatCard
+          label="Completed Maintenance"
+          value={completedMaint.length}
+          icon={CheckCircle}
+          color="bg-emerald-500"
+          sub={completedThisMonth > 0 ? { text: `${completedThisMonth} this month`, color: 'text-emerald-600' } : { text: `${completedMaint.length} total completed`, color: 'text-slate-400' }}
+          onClick={() => navigate('/maintenance?status=Completed')}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -511,10 +554,10 @@ function StaffDashboard() {
     <div className="space-y-6">
       {/* KPI */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Dept Equipment" value={equipment.length} icon={Stethoscope} color="bg-blue-500" />
-        <StatCard label="Working" value={working} icon={CheckCircle} color="bg-emerald-500" />
-        <StatCard label="Under Maintenance" value={underMaint} icon={Wrench} color="bg-amber-500" />
-        <StatCard label="My Open Complaints" value={myOpenComplaints} icon={AlertCircle} color="bg-orange-500" />
+        <StatCard label="Dept Equipment" value={equipment.length} icon={Stethoscope} color="bg-blue-500" onClick={() => navigate('/equipment')} />
+        <StatCard label="Working" value={working} icon={CheckCircle} color="bg-emerald-500" onClick={() => navigate('/equipment?status=Working')} />
+        <StatCard label="Under Maintenance" value={underMaint} icon={Wrench} color="bg-amber-500" onClick={() => navigate('/equipment?status=Under+Maintenance')} />
+        <StatCard label="My Open Complaints" value={myOpenComplaints} icon={AlertCircle} color="bg-orange-500" onClick={() => navigate('/my-complaints')} />
       </div>
 
       {/* QR Generation & Tag Sticking Module */}
@@ -685,10 +728,10 @@ function VendorDashboard() {
     <div className="space-y-6">
       {/* KPI */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Assigned Equipment" value={equipment.length} icon={Package} color="bg-blue-500" />
-        <StatCard label="Pending Service" value={pending} icon={Clock} color="bg-amber-500" />
-        <StatCard label="In Progress" value={inProgress} icon={Activity} color="bg-blue-500" />
-        <StatCard label="Completed" value={completed} icon={CheckCircle} color="bg-emerald-500" />
+        <StatCard label="Assigned Equipment" value={equipment.length} icon={Package} color="bg-blue-500" onClick={() => navigate('/equipment')} />
+        <StatCard label="Pending Service" value={pending} icon={Clock} color="bg-amber-500" onClick={() => navigate('/service-requests')} />
+        <StatCard label="In Progress" value={inProgress} icon={Activity} color="bg-blue-500" onClick={() => navigate('/service-requests')} />
+        <StatCard label="Completed" value={completed} icon={CheckCircle} color="bg-emerald-500" onClick={() => navigate('/service-reports')} />
       </div>
 
       {/* Upload Report CTA */}

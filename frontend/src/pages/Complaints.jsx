@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { complaintAPI, authAPI, vendorAPI } from '../services/api';
 import { AlertCircle, X, ChevronRight, ClipboardList, Building2, Calendar, Clock, Send, CheckCircle2 } from 'lucide-react';
@@ -394,13 +394,14 @@ function UpdateModal({ complaint, engineers, onClose, onSaved }) {
 export default function Complaints() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isAdmin = user?.role === 'Admin';
   const isEngineer = user?.role === 'Technician' || user?.role === 'Biomedical Engineer';
 
   const [complaints, setComplaints] = useState([]);
   const [engineers, setEngineers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStatus, setFilterStatus] = useState(searchParams.get('status') || '');
   const [filterPriority, setFilterPriority] = useState('');
   const [showUpdate, setShowUpdate] = useState(null);
   const [showPassToVendor, setShowPassToVendor] = useState(null);

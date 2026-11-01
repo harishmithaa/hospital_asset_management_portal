@@ -16,14 +16,41 @@ export const getFileUrl = (filePath) => {
 
 export const api = axios.create({
   baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
 });
 
-// Inject Bearer token on every request
+// Inject Bearer token on every request & manage content headers
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('hams_token');
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    if (token && token !== 'null' && token !== 'undefined') {
+      if (config.headers && typeof config.headers.set === 'function') {
+        config.headers.set('Authorization', `Bearer ${token}`);
+      } else {
+        config.headers = config.headers || {};
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+
+    // When submitting FormData, ensure Content-Type is not forced so Axios/browser computes multipart boundary
+    if (config.data instanceof FormData) {
+      if (config.headers && typeof config.headers.delete === 'function') {
+        config.headers.delete('Content-Type');
+      } else if (config.headers) {
+        delete config.headers['Content-Type'];
+      }
+    } else {
+      if (config.headers && typeof config.headers.set === 'function') {
+        if (!config.headers.get('Content-Type')) {
+          config.headers.set('Content-Type', 'application/json');
+        }
+      } else {
+        config.headers = config.headers || {};
+        if (!config.headers['Content-Type']) {
+          config.headers['Content-Type'] = 'application/json';
+        }
+      }
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -34,8 +61,8 @@ export const authAPI = {
   login: (email, password) => api.post('/auth/login', { email, password }),
   getMe: () => api.get('/auth/me'),
   getUsers: () => api.get('/auth/users'),
-  createUser: (formData) => api.post('/auth/users', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  updateUser: (id, formData) => api.put(`/auth/users/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  createUser: (formData) => api.post('/auth/users', formData),
+  updateUser: (id, formData) => api.put(`/auth/users/${id}`, formData),
   deleteUser: (id) => api.delete(`/auth/users/${id}`),
 };
 
@@ -44,8 +71,8 @@ export const equipmentAPI = {
   getAll: (params) => api.get('/equipment', { params }),
   getById: (id) => api.get(`/equipment/${id}`),
   getStats: () => api.get('/equipment/stats'),
-  create: (formData) => api.post('/equipment', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  update: (id, formData) => api.put(`/equipment/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  create: (formData) => api.post('/equipment', formData),
+  update: (id, formData) => api.put(`/equipment/${id}`, formData),
   delete: (id) => api.delete(`/equipment/${id}`),
 };
 
@@ -62,8 +89,8 @@ export const departmentAPI = {
 export const maintenanceAPI = {
   getAll: (params) => api.get('/maintenance', { params }),
   getById: (id) => api.get(`/maintenance/${id}`),
-  create: (data) => api.post('/maintenance', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  update: (id, data) => api.put(`/maintenance/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  create: (data) => api.post('/maintenance', data),
+  update: (id, data) => api.put(`/maintenance/${id}`, data),
   delete: (id) => api.delete(`/maintenance/${id}`),
   updateChecklist: (id, checklistItems) => api.put(`/maintenance/${id}/checklist`, { checklistItems }),
   updateSpareParts: (id, spareParts) => api.put(`/maintenance/${id}/spare-parts`, { spareParts }),
@@ -74,7 +101,7 @@ export const maintenanceAPI = {
 export const complaintAPI = {
   getAll: (params) => api.get('/complaints', { params }),
   getById: (id) => api.get(`/complaints/${id}`),
-  create: (formData) => api.post('/complaints', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  create: (formData) => api.post('/complaints', formData),
   update: (id, data) => api.put(`/complaints/${id}`, data),
   passToVendor: (id, data) => api.put(`/complaints/${id}/pass-to-vendor`, data),
   updateVendorArrival: (id, data) => api.put(`/complaints/${id}/vendor-arrival`, data),
@@ -85,8 +112,8 @@ export const complaintAPI = {
 export const calibrationAPI = {
   getAll: (params) => api.get('/calibration', { params }),
   getById: (id) => api.get(`/calibration/${id}`),
-  create: (formData) => api.post('/calibration', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  update: (id, formData) => api.put(`/calibration/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  create: (formData) => api.post('/calibration', formData),
+  update: (id, formData) => api.put(`/calibration/${id}`, formData),
   delete: (id) => api.delete(`/calibration/${id}`),
 };
 
@@ -108,7 +135,7 @@ export const transferAPI = {
 // Disposal (Admin only — called from Equipment Details)
 export const disposalAPI = {
   getAll: () => api.get('/disposal'),
-  create: (formData) => api.post('/disposal', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  create: (formData) => api.post('/disposal', formData),
   getByEquipment: (id) => api.get(`/disposal/equipment/${id}`),
 };
 

@@ -167,10 +167,28 @@ const processEquipmentDetails = async (equipment, res) => {
 
 // @desc    Create new equipment
 // @route   POST /api/equipment
-// @access  Private/Admin
+// @access  Private/Admin/Engineer
 exports.createEquipment = async (req, res) => {
   try {
     const data = { ...req.body };
+
+    // Sanitize empty strings for ObjectId and optional date fields
+    ['assignedEngineer', 'supplierVendor', 'department'].forEach(f => {
+      if (!data[f] || data[f] === '' || data[f] === 'null' || data[f] === 'undefined') {
+        if (f !== 'department') data[f] = null;
+      }
+    });
+    ['purchaseDate', 'installationDate', 'warrantyStart', 'warrantyEnd', 'amcStart', 'amcEnd', 'nextMaintenanceDate', 'nextCalibrationDate'].forEach(f => {
+      if (data[f] === '' || data[f] === 'null' || data[f] === 'undefined') {
+        data[f] = null;
+      }
+    });
+    if (data.purchaseCost !== undefined && data.purchaseCost !== '') {
+      data.purchaseCost = Number(data.purchaseCost);
+    }
+    if (data.usefulLife !== undefined && data.usefulLife !== '') {
+      data.usefulLife = Number(data.usefulLife);
+    }
 
     if (req.files) {
       if (req.files['image']) data.image = `/uploads/${req.files['image'][0].filename}`;
@@ -201,7 +219,7 @@ exports.createEquipment = async (req, res) => {
 
 // @desc    Update equipment details
 // @route   PUT /api/equipment/:id
-// @access  Private/Admin
+// @access  Private/Admin/Engineer
 exports.updateEquipment = async (req, res) => {
   try {
     let equipment = await Equipment.findById(req.params.id);
@@ -211,6 +229,24 @@ exports.updateEquipment = async (req, res) => {
     }
 
     const data = { ...req.body };
+
+    // Sanitize empty strings for ObjectId and optional date fields
+    ['assignedEngineer', 'supplierVendor'].forEach(f => {
+      if (data[f] === '' || data[f] === 'null' || data[f] === 'undefined') {
+        data[f] = null;
+      }
+    });
+    ['purchaseDate', 'installationDate', 'warrantyStart', 'warrantyEnd', 'amcStart', 'amcEnd', 'nextMaintenanceDate', 'nextCalibrationDate'].forEach(f => {
+      if (data[f] === '' || data[f] === 'null' || data[f] === 'undefined') {
+        data[f] = null;
+      }
+    });
+    if (data.purchaseCost !== undefined && data.purchaseCost !== '') {
+      data.purchaseCost = Number(data.purchaseCost);
+    }
+    if (data.usefulLife !== undefined && data.usefulLife !== '') {
+      data.usefulLife = Number(data.usefulLife);
+    }
 
     if (req.files) {
       if (req.files['image']) data.image = `/uploads/${req.files['image'][0].filename}`;

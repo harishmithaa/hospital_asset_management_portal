@@ -20,11 +20,11 @@ router.get('/stats', protect, authorize('Admin'), getEquipmentStats);
 
 router.route('/')
   .get(protect, getEquipment)
-  .post(protect, authorize('Admin'), multiUpload, createEquipment);
+  .post(protect, authorize('Admin', 'Technician', 'Biomedical Engineer'), multiUpload, createEquipment);
 
 router.route('/:id')
   .get(protect, getEquipmentById)
-  .put(protect, authorize('Admin'), multiUpload, updateEquipment)
+  .put(protect, authorize('Admin', 'Technician', 'Biomedical Engineer'), multiUpload, updateEquipment)
   .delete(protect, authorize('Admin'), deleteEquipment);
 
 module.exports = router;
