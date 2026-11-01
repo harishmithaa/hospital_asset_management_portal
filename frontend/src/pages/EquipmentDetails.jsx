@@ -418,6 +418,11 @@ export default function EquipmentDetails() {
             <button onClick={() => setShowQRModal(true)} className="flex items-center gap-2 px-3.5 py-2 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-semibold hover:bg-emerald-100 transition-colors border border-emerald-200 shadow-sm">
               <QrCode className="h-3.5 w-3.5 text-emerald-600" /> Print QR Tag
             </button>
+            {(user?.role === 'Department Staff' || isAdmin) && !equipment.isDisposed && (
+              <button onClick={() => navigate(`/raise-complaint?equipmentId=${equipment._id}`)} className="flex items-center gap-2 px-3.5 py-2 bg-amber-50 text-amber-700 rounded-lg text-xs font-semibold hover:bg-amber-100 transition-colors border border-amber-200 shadow-sm">
+                <AlertCircle className="h-3.5 w-3.5 text-amber-600" /> Raise Complaint
+              </button>
+            )}
             {isAdmin && !equipment.isDisposed && (
               <>
                 <button onClick={() => setShowTransfer(true)} className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors border border-blue-200">
@@ -557,6 +562,16 @@ export default function EquipmentDetails() {
           {/* ── Complaints Tab ───────────────────────────────────── */}
           {activeTab === 'Complaints' && (
             <div>
+              {(user?.role === 'Department Staff' || isAdmin) && !equipment.isDisposed && (
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => navigate(`/raise-complaint?equipmentId=${equipment._id}`)}
+                    className="flex items-center gap-2 px-3 py-2 bg-amber-600 text-white rounded-lg text-xs font-semibold hover:bg-amber-700 transition-colors shadow-sm"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Raise Complaint
+                  </button>
+                </div>
+              )}
               {history.complaints?.length === 0 ? (
                 <p className="text-sm text-slate-400 text-center py-8">No complaints for this equipment</p>
               ) : (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { equipmentAPI, complaintAPI } from '../../services/api';
 import { Plus, CheckCircle, AlertCircle } from 'lucide-react';
@@ -7,17 +7,27 @@ import { Plus, CheckCircle, AlertCircle } from 'lucide-react';
 export default function RaiseComplaint() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const paramEquipmentId = searchParams.get('equipmentId') || '';
 
   const [equipment, setEquipment] = useState([]);
-  const [form, setForm] = useState({ equipment: '', issueDescription: '', priority: 'Medium', additionalNotes: '' });
+  const [form, setForm] = useState({ equipment: paramEquipmentId, issueDescription: '', priority: 'Medium', additionalNotes: '' });
   const [image, setImage] = useState(null);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
-    equipmentAPI.getAll().then(r => { if (r.data.success) setEquipment(r.data.equipment); });
-  }, []);
+    equipmentAPI.getAll().then(r => {
+      if (r.data.success) {
+        setEquipment(r.data.equipment);
+        if (paramEquipmentId) {
+          // Verify or set
+          setForm(f => ({ ...f, equipment: paramEquipmentId }));
+        }
+      }
+    });
+  }, [paramEquipmentId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

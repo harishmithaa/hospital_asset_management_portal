@@ -13,6 +13,7 @@ export default function QRScannerModal({ isOpen, onClose }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [scannedResult, setScannedResult] = useState(null);
   const [scannedEquipment, setScannedEquipment] = useState(null);
+  const [scanError, setScanError] = useState(null);
   const [loadingEq, setLoadingEq] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -34,6 +35,7 @@ export default function QRScannerModal({ isOpen, onClose }) {
       stopScanner();
       setScannedResult(null);
       setScannedEquipment(null);
+      setScanError(null);
       setCameraError(null);
     }
   }, [isOpen]);
@@ -108,51 +110,71 @@ export default function QRScannerModal({ isOpen, onClose }) {
   const handleDecodedText = async (rawText) => {
     stopScanner();
     setScannedResult(rawText);
+    setScanError(null);
     setLoadingEq(true);
 
-    // Parse potential equipment ID or ObjectId
+    // Parse equipment ID from multiple formats:
+    // 1. Full app URL: http://localhost:5173/equipment/{mongoId}
+    // 2. Legacy tag:   HAMS-EQ-{mongoId}
+    // 3. Raw MongoDB ObjectId or equipmentId (e.g. EQ-2026-001)
     let targetId = rawText.trim();
+
+    const urlMatch = targetId.match(/\/equipment\/([^/?#\s]+)/i);
+    if (urlMatch) {
+      // Direct URL format — navigate immediately
+      setLoadingEq(false);
+      onClose();
+      navigate(`/equipment/${urlMatch[1]}`);
+      return;
+    }
+
     if (targetId.startsWith('HAMS-EQ-')) {
       targetId = targetId.replace('HAMS-EQ-', '');
-    } else if (targetId.includes('/equipment/')) {
-      targetId = targetId.split('/equipment/').pop();
     }
 
     try {
-      // Find matching equipment by _id or equipmentId
+      // Try direct fetch by ObjectId first
+      try {
+        const single = await equipmentAPI.getById(targetId);
+        if (single.data.success && single.data.equipment) {
+          setLoadingEq(false);
+          onClose();
+          navigate(`/equipment/${single.data.equipment._id}`);
+          return;
+        }
+      } catch (_) { /* not a valid ObjectId, fall through to list search */ }
+
+      // Fall back: search the list by equipmentId / serialNumber
       const res = await equipmentAPI.getAll();
       if (res.data.success) {
         const found = res.data.equipment.find(
-          e => e._id === targetId || e.equipmentId?.toLowerCase() === targetId.toLowerCase() || e.serialNumber?.toLowerCase() === targetId.toLowerCase()
+          e => e._id === targetId ||
+               e.equipmentId?.toLowerCase() === targetId.toLowerCase() ||
+               e.serialNumber?.toLowerCase() === targetId.toLowerCase()
         );
         if (found) {
-          setScannedEquipment(found);
-        } else {
-          // Try fetching by ID
-          try {
-            const single = await equipmentAPI.getById(targetId);
-            if (single.data.success) {
-              setScannedEquipment(single.data.equipment);
-            } else {
-              setScannedEquipment(null);
-            }
-          } catch (e) {
-            setScannedEquipment(null);
-          }
+          setLoadingEq(false);
+          onClose();
+          navigate(`/equipment/${found._id}`);
+          return;
         }
       }
+
+      // Nothing found — show error state
+      setScanError(`No equipment matched "${rawText}". Check the QR sticker and try again.`);
+      setScannedEquipment(null);
     } catch (err) {
       console.error(err);
-      setScannedEquipment(null);
+      setScanError('Failed to look up equipment. Check your connection and try again.');
     } finally {
       setLoadingEq(false);
     }
   };
 
   const handleSelectEquipment = (eq) => {
-    setScannedEquipment(eq);
-    setScannedResult(eq.equipmentId);
-    stopScanner();
+    // Manual selection from list → navigate directly
+    onClose();
+    navigate(`/equipment/${eq._id}`);
   };
 
   const handleAction = (path) => {
@@ -195,115 +217,41 @@ export default function QRScannerModal({ isOpen, onClose }) {
         {/* Content Body */}
         <div className="p-6 overflow-y-auto flex-1 space-y-4">
           
-          {/* If an equipment has been scanned / selected */}
-          {scannedEquipment ? (
+          {/* Loading overlay while looking up QR code */}
+          {loadingEq && (
             <div className="space-y-4 animate-fade-in">
-              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
-                <CheckCircle2 className="h-8 w-8 text-emerald-600 mx-auto mb-1" />
-                <h3 className="text-base font-bold text-slate-800">{scannedEquipment.name}</h3>
-                <p className="text-xs text-slate-500 font-mono mt-0.5">Asset ID: {scannedEquipment.equipmentId}</p>
-                
-                <div className="flex justify-center gap-2 mt-3">
-                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
-                    scannedEquipment.currentStatus === 'Working' ? 'bg-emerald-100 text-emerald-800' :
-                    scannedEquipment.currentStatus === 'Under Maintenance' ? 'bg-amber-100 text-amber-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {scannedEquipment.currentStatus}
-                  </span>
-                  <span className="text-[10px] font-semibold bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full">
-                    {scannedEquipment.department?.name || 'Department'}
-                  </span>
-                </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-8 text-center">
+                <div className="h-10 w-10 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-sm font-semibold text-blue-700">Looking up equipment...</p>
+                <p className="text-xs text-blue-400 mt-1">Navigating to equipment details</p>
               </div>
+            </div>
+          )}
 
-              {/* Equipment Spec Snapshot */}
-              <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Model</span>
-                  <span className="font-semibold text-slate-700">{scannedEquipment.model || 'N/A'}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Serial No.</span>
-                  <span className="font-semibold text-slate-700">{scannedEquipment.serialNumber || 'N/A'}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Location</span>
-                  <span className="font-semibold text-slate-700">{scannedEquipment.location || 'N/A'}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Warranty Expiry</span>
-                  <span className="font-semibold text-slate-700">
-                    {scannedEquipment.warrantyExpiryDate ? new Date(scannedEquipment.warrantyExpiryDate).toLocaleDateString() : 'N/A'}
-                  </span>
-                </div>
+          {/* Scan error state */}
+          {!loadingEq && scanError && (
+            <div className="space-y-4 animate-fade-in">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-5 text-center">
+                <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                <h3 className="text-sm font-bold text-slate-800 mb-1">Equipment Not Found</h3>
+                <p className="text-xs text-red-600">{scanError}</p>
               </div>
-
-              {/* Quick Actions */}
-              <div className="space-y-2">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Quick Actions</p>
-                
-                <button
-                  onClick={() => handleAction(`/equipment/${scannedEquipment._id}`)}
-                  className="w-full flex items-center justify-between p-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl text-blue-700 font-semibold text-xs transition-colors"
-                >
-                  <span className="flex items-center gap-2">
-                    <ExternalLink className="h-4 w-4" /> View Full Equipment Lifecycle
-                  </span>
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-
-                {user?.role === 'Department Staff' && (
-                  <button
-                    onClick={() => handleAction(`/raise-complaint?equipmentId=${scannedEquipment._id}`)}
-                    className="w-full flex items-center justify-between p-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl text-amber-800 font-semibold text-xs transition-colors"
-                  >
-                    <span className="flex items-center gap-2">
-                      <Plus className="h-4 w-4" /> Report Issue / Raise Complaint
-                    </span>
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                )}
-
-                {(user?.role === 'Admin' || user?.role === 'Technician' || user?.role === 'Biomedical Engineer') && (
-                  <>
-                    <button
-                      onClick={() => handleAction(`/maintenance?equipmentId=${scannedEquipment._id}`)}
-                      className="w-full flex items-center justify-between p-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-emerald-800 font-semibold text-xs transition-colors"
-                    >
-                      <span className="flex items-center gap-2">
-                        <Wrench className="h-4 w-4" /> Schedule / Log Maintenance
-                      </span>
-                      <ArrowRight className="h-4 w-4" />
-                    </button>
-                    
-                    <button
-                      onClick={() => handleAction(`/calibration?equipmentId=${scannedEquipment._id}`)}
-                      className="w-full flex items-center justify-between p-3 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl text-purple-800 font-semibold text-xs transition-colors"
-                    >
-                      <span className="flex items-center gap-2">
-                        <Gauge className="h-4 w-4" /> Record Calibration Test
-                      </span>
-                      <ArrowRight className="h-4 w-4" />
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {/* Scan Another Button */}
               <button
                 onClick={() => {
-                  setScannedEquipment(null);
+                  setScanError(null);
                   setScannedResult(null);
                   setActiveTab('camera');
                 }}
-                className="w-full py-2.5 text-xs text-slate-500 hover:text-slate-700 font-medium text-center border-t border-slate-100 mt-2"
+                className="w-full py-2.5 text-xs text-slate-500 hover:text-slate-700 font-semibold text-center border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
               >
-                Scan Another Equipment Tag
+                Try Again
               </button>
             </div>
-          ) : (
-            /* Mode Selection Tabs & Scanner UI */
+          )}
+
+          {/* Scanner / Search tabs — shown when not loading and no error */}
+          {!loadingEq && !scanError && (
+
             <div>
               {/* Tabs */}
               <div className="flex bg-slate-100 p-1 rounded-xl mb-4">

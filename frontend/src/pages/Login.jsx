@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Shield, User, Key, Info, HelpCircle } from 'lucide-react';
 
@@ -10,6 +10,11 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const redirectTarget = location.state?.from
+    ? `${location.state.from.pathname || ''}${location.state.from.search || ''}`
+    : '/dashboard';
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -22,7 +27,7 @@ export default function Login() {
 
     try {
       await login(email, password);
-      navigate('/dashboard');
+      navigate(redirectTarget, { replace: true });
     } catch (err) {
       setError(err.message || 'Authentication failed');
     } finally {

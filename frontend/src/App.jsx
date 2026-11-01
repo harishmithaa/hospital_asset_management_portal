@@ -1,5 +1,4 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -33,6 +32,7 @@ import ServiceReports from './pages/vendor/ServiceReports';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -45,7 +45,7 @@ function ProtectedRoute({ children }) {
     );
   }
 
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
 
   return <DashboardLayout>{children}</DashboardLayout>;
 }

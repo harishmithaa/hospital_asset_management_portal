@@ -8,7 +8,11 @@ export default function QRGeneratorModal({ isOpen, onClose, equipment }) {
 
   if (!isOpen || !equipment) return null;
 
-  const qrValue = `HAMS-EQ-${equipment._id}`;
+  // Encode the full deep-link URL so ANY camera app navigates to the equipment details page
+  const qrValue = `${window.location.origin}/equipment/${equipment._id}`;
+  const tagCode = `HAMS-EQ-${equipment._id}`;
+
+
 
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
@@ -93,7 +97,7 @@ export default function QRGeneratorModal({ isOpen, onClose, equipment }) {
               <div><strong>Serial:</strong> ${equipment.serialNumber || 'N/A'}</div>
               <div><strong>Status:</strong> ${equipment.currentStatus}</div>
             </div>
-            <div class="footer-text">SCAN QR CODE TO LOG MAINTENANCE / REPORT ISSUES</div>
+            <div class="footer-text">SCAN QR CODE TO VIEW EQUIPMENT IN HAMS PORTAL</div>
           </div>
           <script>
             setTimeout(() => {
@@ -108,7 +112,7 @@ export default function QRGeneratorModal({ isOpen, onClose, equipment }) {
   };
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(qrValue);
+    navigator.clipboard.writeText(tagCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -191,7 +195,7 @@ export default function QRGeneratorModal({ isOpen, onClose, equipment }) {
               className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-xs transition-colors"
             >
               {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Tag className="h-4 w-4 text-slate-500" />}
-              {copied ? 'Asset Tag String Copied!' : `Copy Tag Code (${qrValue})`}
+              {copied ? 'Asset Tag String Copied!' : `Copy Tag Code (${tagCode})`}
             </button>
           </div>
 
