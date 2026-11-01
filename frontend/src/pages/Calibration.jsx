@@ -657,11 +657,11 @@ export default function Calibration() {
     equipmentList.forEach(eq => {
       if (eq.isDisposed) return;
 
-      const eqRecords = records.filter(r => (r.equipment?._id || r.equipment) === eq._id);
-      const pendingOrOverdue = eqRecords.find(r => r.status === 'Pending' || r.status === 'Overdue');
-      const scheduled = eqRecords.find(r => r.status === 'Scheduled');
-      const completed = eqRecords.filter(r => r.status === 'Completed');
-      const latestCompleted = completed[0];
+      const overdueRecord = eqRecords.find(r => r.status === 'Overdue');
+      const pendingRecord = eqRecords.find(r => r.status === 'Pending');
+      const scheduledRecord = eqRecords.find(r => r.status === 'Scheduled');
+      const completedRecords = eqRecords.filter(r => r.status === 'Completed');
+      const latestCompleted = completedRecords[0];
 
       // Fallback: Next calibration due date is guaranteed for every item!
       const calculateDefaultNextDue = () => {
@@ -674,24 +674,28 @@ export default function Calibration() {
         return d.toISOString();
       };
 
-      const nextDueDate = pendingOrOverdue?.dueDate || scheduled?.dueDate || eq.nextCalibrationDate || calculateDefaultNextDue();
+      const nextDueDate = overdueRecord?.dueDate ||
+        pendingRecord?.dueDate ||
+        scheduledRecord?.dueDate ||
+        latestCompleted?.dueDate ||
+        eq.nextCalibrationDate ||
+        calculateDefaultNextDue();
+
       const lastDate = latestCompleted?.calibrationDate || eq.lastCalibrationDate || null;
 
-      let status = 'Pending';
-      if (nextDueDate) {
-        const due = new Date(nextDueDate);
-        if (due < now) {
-          status = 'Overdue';
-        } else if (due <= oneWeekFromNow) {
-          // Within 1 week of due date -> turns to Pending!
-          status = 'Pending';
-        } else if (lastDate) {
-          // Has previous completed calibration and > 1 week away -> Completed
-          status = 'Completed';
-        } else {
-          // Has never been calibrated before -> Initial Calibration is Pending!
-          status = 'Pending';
-        }
+      let status = 'Completed';
+      if (overdueRecord || (nextDueDate && new Date(nextDueDate) < now)) {
+        status = 'Overdue';
+      } else if (pendingRecord || (nextDueDate && new Date(nextDueDate) <= oneWeekFromNow)) {
+        status = 'Pending';
+      } else if (scheduledRecord && !latestCompleted) {
+        status = 'Scheduled';
+      } else if (latestCompleted) {
+        status = 'Completed';
+      } else if (scheduledRecord) {
+        status = 'Scheduled';
+      } else {
+        status = 'Completed';
       }
 
       map[eq._id] = {
@@ -701,8 +705,8 @@ export default function Calibration() {
         lastDate,
         nextDueDate,
         latestCompleted,
-        pending: pendingOrOverdue || (status === 'Pending' ? (scheduled || latestCompleted || { equipment: eq, dueDate: nextDueDate }) : null),
-        scheduled
+        pending: pendingRecord || (status === 'Pending' ? (scheduledRecord || latestCompleted || { equipment: eq, dueDate: nextDueDate }) : null),
+        scheduled: scheduledRecord
       };
     });
     return map;
@@ -726,14 +730,15 @@ export default function Calibration() {
 
   // Stats
   const stats = useMemo(() => {
-    let completed = 0, pending = 0, overdue = 0, notCalibrated = 0;
+    let completed = 0, pending = 0, scheduled = 0, overdue = 0, notCalibrated = 0;
     Object.values(equipmentCalibrationMap).forEach(v => {
       if (v.status === 'Completed') completed++;
+      else if (v.status === 'Scheduled') scheduled++;
       else if (v.status === 'Pending') pending++;
       else if (v.status === 'Overdue') overdue++;
       else notCalibrated++;
     });
-    return { completed, pending, overdue, notCalibrated, total: equipmentList.length };
+    return { completed, pending, scheduled, overdue, notCalibrated, total: equipmentList.length };
   }, [equipmentCalibrationMap, equipmentList]);
 
   // Flow handlers
@@ -789,8 +794,8 @@ export default function Calibration() {
           <p className="text-2xl font-bold text-emerald-600 mt-1">{stats.completed}</p>
         </div>
         <div className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-xs">
-          <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Pending Recalibration</p>
-          <p className="text-2xl font-bold text-blue-600 mt-1">{stats.pending}</p>
+          <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Next Scheduled</p>
+          <p className="text-2xl font-bold text-blue-600 mt-1">{stats.scheduled + stats.pending}</p>
         </div>
         <div className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-xs">
           <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Overdue Alert</p>
@@ -846,6 +851,7 @@ export default function Calibration() {
             >
               <option value="">All Statuses</option>
               <option value="Completed">Completed / Valid</option>
+              <option value="Scheduled">Scheduled</option>
               <option value="Pending">Pending Recalibration</option>
               <option value="Overdue">Overdue</option>
               <option value="Not Calibrated">Not Calibrated</option>

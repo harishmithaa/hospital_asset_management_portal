@@ -401,7 +401,7 @@ export default function EquipmentDetails() {
 
   const nextCalDue = nextCalDate ? new Date(nextCalDate) : null;
   const calDiffDays = nextCalDue ? Math.ceil((nextCalDue - now) / (1000 * 60 * 60 * 24)) : null;
-  const calStatus = !nextCalDue ? 'Pending' : calDiffDays < 0 ? 'Overdue' : calDiffDays <= 7 ? 'Pending' : lastCalDate ? 'Completed' : 'Pending';
+  const calStatus = !nextCalDue ? 'Scheduled' : calDiffDays < 0 ? 'Overdue' : calDiffDays <= 7 ? 'Pending' : scheduledCal && !latestCompletedCal ? 'Scheduled' : lastCalDate ? 'Completed' : 'Scheduled';
 
   return (
     <div className="space-y-5 max-w-6xl mx-auto">

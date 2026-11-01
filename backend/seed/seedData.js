@@ -165,7 +165,7 @@ const seedData = async () => {
         name: 'Anesthesia Machine',  category: 'Life Support', department: departments[3]._id, manufacturer: 'Dräger',    modelNumber: 'Perseus A500', serialNumber: 'DR-PA500-2024-001', purchaseDate: daysAgo(350), installationDate: daysAgo(340), purchaseCost: 85000, usefulLife: 15, warrantyStart: daysAgo(350), warrantyEnd: daysFromNow(215), amcStart: daysAgo(20), amcEnd: daysFromNow(345), supplierVendor: vendors[4]._id, assignedEngineer: engineerUser._id, roomNumber: 'OT-301', building: 'Block B', nextMaintenanceDate: daysFromNow(18), lastMaintenanceDate: daysAgo(45), lastCalibrationDate: daysAgo(30), nextCalibrationDate: daysFromNow(335), currentStatus: 'Working'
       },
       {
-        name: 'MRI Scanner',         category: 'Imaging',      department: departments[1]._id, manufacturer: 'Siemens',   modelNumber: 'MAGNETOM Sola', serialNumber: 'SI-SOLA-2022-001', purchaseDate: daysAgo(700), installationDate: daysAgo(680), purchaseCost: 750000, usefulLife: 15, warrantyStart: daysAgo(700), warrantyEnd: daysFromNow(260), amcStart: daysAgo(10), amcEnd: daysFromNow(355), supplierVendor: vendors[1]._id, assignedEngineer: engineerUser._id, roomNumber: 'R-101', building: 'Block A', nextMaintenanceDate: daysFromNow(30), lastMaintenanceDate: daysAgo(8), lastCalibrationDate: daysAgo(60), nextCalibrationDate: daysFromNow(305), currentStatus: 'Working'
+        name: 'MRI Scanner',         category: 'Imaging',      department: departments[1]._id, manufacturer: 'Siemens',   modelNumber: 'MAGNETOM Sola', serialNumber: 'SI-SOLA-2022-001', purchaseDate: daysAgo(700), installationDate: daysAgo(680), purchaseCost: 750000, usefulLife: 15, warrantyStart: daysAgo(700), warrantyEnd: daysFromNow(260), amcStart: daysAgo(10), amcEnd: daysFromNow(355), supplierVendor: vendors[1]._id, assignedEngineer: engineerUser._id, roomNumber: 'R-101', building: 'Block A', nextMaintenanceDate: daysFromNow(30), lastMaintenanceDate: daysAgo(8), lastCalibrationDate: daysAgo(107), nextCalibrationDate: daysAgo(17), currentStatus: 'Working'
       },
       {
         name: 'Blood Gas Analyzer',  category: 'Laboratory',   department: departments[6]._id, manufacturer: 'Siemens',   modelNumber: 'RAPIDPoint 500e', serialNumber: 'SI-RP500-2024-001', purchaseDate: daysAgo(180), installationDate: daysAgo(170), purchaseCost: 35000, usefulLife: 8, warrantyStart: daysAgo(180), warrantyEnd: daysFromNow(400), amcStart: null, amcEnd: null, supplierVendor: vendors[1]._id, assignedEngineer: engineerUser._id, roomNumber: 'L-401', building: 'Block A', nextMaintenanceDate: daysFromNow(45), lastMaintenanceDate: daysAgo(30), lastCalibrationDate: daysAgo(45), nextCalibrationDate: daysFromNow(320), currentStatus: 'Working'
@@ -468,25 +468,15 @@ const seedData = async () => {
         certificateUpload: ''
       },
 
-      // 4. MRI Scanner - Completed test + Next test scheduled in 60 days
+      // 4. MRI Scanner - ONLY 1 OVERDUE
       {
         equipment: mriScanner._id,
-        calibrationDate: daysAgo(30),
-        dueDate: daysFromNow(60),
+        calibrationDate: daysAgo(107),
+        dueDate: daysAgo(17), // Overdue by 17 days -> ONLY 1 OVERDUE
         engineer: engineerUser._id,
         result: 'Pass',
-        observations: 'Magnetic field homogeneity certified within 0.5 ppm. RF transmit coil SNR verified.',
-        status: 'Completed',
-        certificateUpload: '/uploads/calibration_cert_mri.pdf'
-      },
-      {
-        equipment: mriScanner._id,
-        calibrationDate: daysAgo(30),
-        dueDate: daysFromNow(60), // Next cycle in 60 days (> 1 week) -> Scheduled
-        engineer: engineerUser._id,
-        result: 'Pass',
-        observations: 'Next scheduled periodic RF calibration and phantom verification.',
-        status: 'Scheduled',
+        observations: 'Periodic magnetic resonance RF calibration overdue. Verification test required.',
+        status: 'Overdue',
         certificateUpload: ''
       },
 
