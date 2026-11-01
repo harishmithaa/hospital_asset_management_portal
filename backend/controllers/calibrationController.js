@@ -76,6 +76,12 @@ exports.createCalibration = async (req, res) => {
 
     const certificateUpload = req.file ? `/uploads/${req.file.filename}` : '';
 
+    // Calibration can only be 'Completed' if a certificate document is uploaded
+    let finalStatus = status || 'Pending';
+    if (finalStatus === 'Completed' && !certificateUpload) {
+      finalStatus = 'Pending';
+    }
+
     const calibration = await Calibration.create({
       equipment: equipmentId,
       calibrationDate,
@@ -84,18 +90,23 @@ exports.createCalibration = async (req, res) => {
       vendor: vendor || null,
       result: result || 'Pass',
       observations,
-      status: status || 'Completed',
+      status: finalStatus,
       certificateUpload
     });
 
     // Update equipment calibration dates
     if (calibration.status === 'Completed') {
       equipment.lastCalibrationDate = calibrationDate || new Date();
-      equipment.nextCalibrationDate = dueDate;
+      if (dueDate) equipment.nextCalibrationDate = dueDate;
       if (calibration.result === 'Fail') {
         equipment.currentStatus = 'Out of Service';
       }
       await equipment.save();
+    } else if (calibration.status === 'Pending') {
+      if (dueDate) {
+        equipment.nextCalibrationDate = dueDate;
+        await equipment.save();
+      }
     }
 
     const populated = await Calibration.findById(calibration._id)
@@ -124,18 +135,30 @@ exports.updateCalibration = async (req, res) => {
       updates.certificateUpload = `/uploads/${req.file.filename}`;
     }
 
+    // Require certificate document to change status to 'Completed'
+    if (updates.status === 'Completed' && !updates.certificateUpload && !record.certificateUpload) {
+      return res.status(400).json({
+        success: false,
+        message: 'A calibration certificate document must be uploaded to mark calibration as Completed.'
+      });
+    }
+
     record = await Calibration.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true })
       .populate('equipment', 'name equipmentId')
       .populate('engineer', 'name email');
 
     // If completed, update equipment dates
-    if (updates.status === 'Completed' && updates.dueDate) {
+    if (record.status === 'Completed') {
       const equipment = await Equipment.findById(record.equipment._id || record.equipment);
       if (equipment) {
-        equipment.lastCalibrationDate = updates.calibrationDate || record.calibrationDate;
-        equipment.nextCalibrationDate = updates.dueDate;
-        if (updates.result === 'Fail') {
+        equipment.lastCalibrationDate = record.calibrationDate || new Date();
+        if (record.dueDate) {
+          equipment.nextCalibrationDate = record.dueDate;
+        }
+        if (record.result === 'Fail') {
           equipment.currentStatus = 'Out of Service';
+        } else if (equipment.currentStatus === 'Out of Service') {
+          equipment.currentStatus = 'Working';
         }
         await equipment.save();
       }

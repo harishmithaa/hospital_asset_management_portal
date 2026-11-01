@@ -384,6 +384,12 @@ export default function EquipmentDetails() {
   const warrantyStatus = equipment.warrantyEnd ? (new Date(equipment.warrantyEnd) < now ? 'Expired' : 'Active') : null;
   const amcStatus = equipment.amcEnd ? (new Date(equipment.amcEnd) < now ? 'Expired' : 'Active') : null;
 
+  const completedCals = (history.calibrations || []).filter(c => c.status === 'Completed');
+  const latestCompletedCal = completedCals[0];
+  const pendingCal = (history.calibrations || []).find(c => c.status === 'Pending' || c.status === 'Overdue');
+  const lastCalDate = equipment.lastCalibrationDate || latestCompletedCal?.calibrationDate;
+  const nextCalDate = equipment.nextCalibrationDate || pendingCal?.dueDate || latestCompletedCal?.dueDate;
+
   return (
     <div className="space-y-5 max-w-6xl mx-auto">
       {/* Back */}
@@ -408,7 +414,7 @@ export default function EquipmentDetails() {
               <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
                 <span className="flex items-center gap-1"><Building2 className="h-3.5 w-3.5" />{equipment.department?.name}</span>
                 {equipment.roomNumber && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />Room {equipment.roomNumber}</span>}
-                {equipment.assignedEngineer && <span className="flex items-center gap-1"><User className="h-3.5 w-3.5" />{equipment.assignedEngineer.name}</span>}
+                {equipment.assignedEngineer && <span className="flex items-center gap-1"><User className="h-3.5 w-3.5" />{equipment.assignedEngineer.name.replace(/^Eng\.\s+/i, 'Tech. ')}</span>}
               </div>
             </div>
           </div>
@@ -464,41 +470,41 @@ export default function EquipmentDetails() {
           {/* ── Overview Tab ─────────────────────────────────────── */}
           {activeTab === 'Overview' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Equipment Information</h4>
-                {[
-                  ['Manufacturer', equipment.manufacturer],
-                  ['Model Number', equipment.modelNumber],
-                  ['Serial Number', equipment.serialNumber],
-                  ['Category', equipment.category],
-                  ['Purchase Date', equipment.purchaseDate ? new Date(equipment.purchaseDate).toLocaleDateString() : null],
-                  ['Purchase Cost', equipment.purchaseCost ? `₹${Number(equipment.purchaseCost).toLocaleString()}` : null],
-                  ['Installation Date', equipment.installationDate ? new Date(equipment.installationDate).toLocaleDateString() : null],
-                  ['Useful Life', equipment.usefulLife ? `${equipment.usefulLife} years` : null],
-                  ['Building', equipment.building],
-                  ['Room', equipment.roomNumber],
-                  ['Remarks', equipment.remarks],
-                ].map(([label, value]) => value ? (
-                  <div key={label} className="flex justify-between text-sm border-b border-slate-50 pb-2">
-                    <span className="text-slate-500 text-xs">{label}</span>
-                    <span className="text-slate-800 text-xs font-medium text-right">{value}</span>
-                  </div>
-                ) : null)}
-              </div>
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Equipment Information</h4>
+                  {[
+                    ['Manufacturer', equipment.manufacturer],
+                    ['Model Number', equipment.modelNumber],
+                    ['Serial Number', equipment.serialNumber],
+                    ['Category', equipment.category],
+                    ['Purchase Date', equipment.purchaseDate ? new Date(equipment.purchaseDate).toLocaleDateString() : null],
+                    ['Purchase Cost', equipment.purchaseCost ? `₹${Number(equipment.purchaseCost).toLocaleString()}` : null],
+                    ['Installation Date', equipment.installationDate ? new Date(equipment.installationDate).toLocaleDateString() : null],
+                    ['Useful Life', equipment.usefulLife ? `${equipment.usefulLife} years` : null],
+                    ['Building', equipment.building],
+                    ['Room', equipment.roomNumber],
+                    ['Remarks', equipment.remarks],
+                  ].map(([label, value]) => value ? (
+                    <div key={label} className="flex justify-between text-sm border-b border-slate-50 pb-2">
+                      <span className="text-slate-500 text-xs">{label}</span>
+                      <span className="text-slate-800 text-xs font-medium text-right">{value}</span>
+                    </div>
+                  ) : null)}
+                </div>
 
-              <div className="space-y-4">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Maintenance & Calibration Status</h4>
-                {[
-                  ['Last Maintenance', equipment.lastMaintenanceDate ? new Date(equipment.lastMaintenanceDate).toLocaleDateString() : 'Not recorded'],
-                  ['Next Maintenance', equipment.nextMaintenanceDate ? new Date(equipment.nextMaintenanceDate).toLocaleDateString() : 'Not scheduled'],
-                  ['Last Calibration', equipment.lastCalibrationDate ? new Date(equipment.lastCalibrationDate).toLocaleDateString() : 'Not recorded'],
-                  ['Next Calibration', equipment.nextCalibrationDate ? new Date(equipment.nextCalibrationDate).toLocaleDateString() : 'Not scheduled'],
-                ].map(([label, value]) => (
-                  <div key={label} className="flex justify-between text-sm border-b border-slate-50 pb-2">
-                    <span className="text-slate-500 text-xs">{label}</span>
-                    <span className="text-slate-800 text-xs font-medium">{value}</span>
-                  </div>
-                ))}
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Maintenance & Calibration Status</h4>
+                  {[
+                    ['Last Maintenance', equipment.lastMaintenanceDate ? new Date(equipment.lastMaintenanceDate).toLocaleDateString() : 'Not recorded'],
+                    ['Next Maintenance', equipment.nextMaintenanceDate ? new Date(equipment.nextMaintenanceDate).toLocaleDateString() : 'Not scheduled'],
+                    ['Last Calibration', lastCalDate ? new Date(lastCalDate).toLocaleDateString() : 'Not recorded'],
+                    ['Next Calibration', nextCalDate ? new Date(nextCalDate).toLocaleDateString() : 'Not scheduled'],
+                  ].map(([label, value]) => (
+                    <div key={label} className="flex justify-between text-sm border-b border-slate-50 pb-2">
+                      <span className="text-slate-500 text-xs">{label}</span>
+                      <span className="text-slate-800 text-xs font-medium">{value}</span>
+                    </div>
+                  ))}
 
                 <div className="mt-4 space-y-2">
                   <div className={`p-3 rounded-lg border ${warrantyStatus === 'Active' ? 'bg-emerald-50 border-emerald-200' : warrantyStatus === 'Expired' ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'}`}>

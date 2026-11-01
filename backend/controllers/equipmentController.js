@@ -126,6 +126,18 @@ const processEquipmentDetails = async (equipment, res) => {
       .populate('approvedBy', 'name email')
   ]);
 
+  // Derive calibration dates from calibrations history if not set on equipment
+  if (calibrations && calibrations.length > 0) {
+    const completedCal = calibrations.find(c => c.status === 'Completed');
+    if (completedCal && !equipment.lastCalibrationDate) {
+      equipment.lastCalibrationDate = completedCal.calibrationDate;
+    }
+    const latestDueCal = calibrations[0]; // sorted by calibrationDate: -1
+    if (latestDueCal?.dueDate && !equipment.nextCalibrationDate) {
+      equipment.nextCalibrationDate = latestDueCal.dueDate;
+    }
+  }
+
   res.json({
     success: true,
     equipment,
