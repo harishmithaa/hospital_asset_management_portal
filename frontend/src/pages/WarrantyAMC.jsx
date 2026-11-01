@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { warrantyAmcAPI } from '../services/api';
 import { ShieldCheck, ShieldAlert, AlertTriangle, CheckCircle, X, Clock } from 'lucide-react';
 
@@ -16,10 +16,19 @@ const StatusBadge = ({ status }) => (
 
 export default function WarrantyAMC() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const urlTab = searchParams.get('tab') || 'warranty';
+  const urlStatus = searchParams.get('status') || '';
+
   const [data, setData] = useState({ warranties: [], amcs: [], stats: {} });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('warranty');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [activeTab, setActiveTab] = useState(urlTab);
+  const [filterStatus, setFilterStatus] = useState(urlStatus);
+
+  useEffect(() => {
+    if (urlTab) setActiveTab(urlTab);
+    if (urlStatus) setFilterStatus(urlStatus);
+  }, [urlTab, urlStatus]);
 
   useEffect(() => {
     warrantyAmcAPI.getSummary()
@@ -37,14 +46,21 @@ export default function WarrantyAMC() {
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
-          { label: 'Warranty Active', value: stats.warrantyActive, color: 'bg-emerald-500' },
-          { label: 'Warranty Expiring', value: stats.warrantyExpiring, color: 'bg-amber-500', alert: true },
-          { label: 'Warranty Expired', value: stats.warrantyExpired, color: 'bg-red-500', alert: true },
-          { label: 'AMC Active', value: stats.amcActive, color: 'bg-emerald-500' },
-          { label: 'AMC Expiring', value: stats.amcExpiring, color: 'bg-amber-500', alert: true },
-          { label: 'AMC Expired', value: stats.amcExpired, color: 'bg-red-500', alert: true },
+          { label: 'Warranty Active', tab: 'warranty', status: 'Active', value: stats.warrantyActive, color: 'bg-emerald-500' },
+          { label: 'Warranty Expiring', tab: 'warranty', status: 'Expiring', value: stats.warrantyExpiring, color: 'bg-amber-500', alert: true },
+          { label: 'Warranty Expired', tab: 'warranty', status: 'Expired', value: stats.warrantyExpired, color: 'bg-red-500', alert: true },
+          { label: 'AMC Active', tab: 'amc', status: 'Active', value: stats.amcActive, color: 'bg-emerald-500' },
+          { label: 'AMC Expiring', tab: 'amc', status: 'Expiring', value: stats.amcExpiring, color: 'bg-amber-500', alert: true },
+          { label: 'AMC Expired', tab: 'amc', status: 'Expired', value: stats.amcExpired, color: 'bg-red-500', alert: true },
         ].map(item => (
-          <div key={item.label} className={`bg-white rounded-xl border ${item.alert && item.value > 0 ? 'border-red-200' : 'border-slate-200'} p-4`}>
+          <div
+            key={item.label}
+            onClick={() => {
+              setActiveTab(item.tab);
+              setFilterStatus(filterStatus === item.status && activeTab === item.tab ? '' : item.status);
+            }}
+            className={`bg-white rounded-xl border ${item.alert && item.value > 0 ? 'border-red-200' : 'border-slate-200'} p-4 cursor-pointer hover:shadow-md transition-all ${filterStatus === item.status && activeTab === item.tab ? 'ring-2 ring-blue-500 border-blue-500' : ''}`}
+          >
             <p className="text-xl font-bold text-slate-800">{item.value ?? '—'}</p>
             <p className="text-xs text-slate-500 mt-0.5">{item.label}</p>
           </div>

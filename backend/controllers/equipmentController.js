@@ -266,7 +266,9 @@ exports.getEquipmentStats = async (req, res) => {
       maintenanceDue,
       calibrationDue,
       warrantyExpiring,
-      amcExpiring
+      warrantyExpired,
+      amcExpiring,
+      amcExpired
     ] = await Promise.all([
       Equipment.countDocuments({ isDisposed: { $ne: true } }),
       Equipment.countDocuments({ currentStatus: 'Working', isDisposed: { $ne: true } }),
@@ -276,12 +278,14 @@ exports.getEquipmentStats = async (req, res) => {
       Equipment.countDocuments({ nextMaintenanceDate: { $lte: in7Days }, isDisposed: { $ne: true } }),
       Equipment.countDocuments({ nextCalibrationDate: { $lte: in7Days }, isDisposed: { $ne: true } }),
       Equipment.countDocuments({ warrantyEnd: { $gte: now, $lte: in30Days }, isDisposed: { $ne: true } }),
-      Equipment.countDocuments({ amcEnd: { $gte: now, $lte: in30Days }, isDisposed: { $ne: true } })
+      Equipment.countDocuments({ warrantyEnd: { $lt: now }, isDisposed: { $ne: true } }),
+      Equipment.countDocuments({ amcEnd: { $gte: now, $lte: in30Days }, isDisposed: { $ne: true } }),
+      Equipment.countDocuments({ amcEnd: { $lt: now }, isDisposed: { $ne: true } })
     ]);
 
     res.json({
       success: true,
-      stats: { total, working, underMaintenance, outOfService, disposed, maintenanceDue, calibrationDue, warrantyExpiring, amcExpiring }
+      stats: { total, working, underMaintenance, outOfService, disposed, maintenanceDue, calibrationDue, warrantyExpiring, warrantyExpired, amcExpiring, amcExpired }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

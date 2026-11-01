@@ -17,8 +17,11 @@ import {
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
-const StatCard = ({ label, value, icon: Icon, color, sub }) => (
-  <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
+const StatCard = ({ label, value, icon: Icon, color, sub, onClick }) => (
+  <div
+    onClick={onClick}
+    className={`bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4 hover:shadow-md transition-all ${onClick ? 'cursor-pointer hover:border-blue-300 active:scale-[0.99]' : ''}`}
+  >
     <div className={`h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
       <Icon className="h-6 w-6 text-white" />
     </div>
@@ -152,18 +155,53 @@ function AdminDashboard() {
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
-        <StatCard label="Total Equipment" value={equipment.length} icon={Stethoscope} color="bg-blue-500" />
-        <StatCard label="Working" value={working} icon={CheckCircle} color="bg-emerald-500" />
-        <StatCard label="Under Maintenance" value={underMaint} icon={Wrench} color="bg-amber-500" />
-        <StatCard label="Out of Service" value={outOfService} icon={AlertCircle} color="bg-red-500" />
-        <StatCard label="Open Complaints" value={openComplaints} icon={TriangleAlert} color="bg-orange-500" sub={openComplaints > 0 ? { text: 'Needs attention', color: 'text-orange-600' } : null} />
+        <StatCard label="Total Equipment" value={equipment.length} icon={Stethoscope} color="bg-blue-500" onClick={() => navigate('/equipment')} />
+        <StatCard label="Working" value={working} icon={CheckCircle} color="bg-emerald-500" onClick={() => navigate('/equipment?status=Working')} />
+        <StatCard label="Under Maintenance" value={underMaint} icon={Wrench} color="bg-amber-500" onClick={() => navigate('/equipment?status=Under+Maintenance')} />
+        <StatCard label="Out of Service" value={outOfService} icon={AlertCircle} color="bg-red-500" onClick={() => navigate('/equipment?status=Out+of+Service')} />
+        <StatCard label="Open Complaints" value={openComplaints} icon={TriangleAlert} color="bg-orange-500" sub={openComplaints > 0 ? { text: 'Needs attention', color: 'text-orange-600' } : null} onClick={() => navigate('/complaints')} />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Maintenance Due (7d)" value={maintDue} icon={CalendarClock} color={maintDue > 0 ? 'bg-amber-500' : 'bg-slate-400'} sub={maintDue > 0 ? { text: 'Schedule soon', color: 'text-amber-600' } : null} />
-        <StatCard label="Calibration Due" value={calDue} icon={Gauge} color={calDue > 0 ? 'bg-purple-500' : 'bg-slate-400'} />
-        <StatCard label="Warranty Expiring" value={warranties.stats?.warrantyExpiring || 0} icon={ShieldCheck} color="bg-indigo-500" />
-        <StatCard label="AMC Expiring" value={warranties.stats?.amcExpiring || 0} icon={ShieldAlert} color="bg-pink-500" />
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
+        <StatCard
+          label="Maintenance Due (7d)"
+          value={maintDue}
+          icon={CalendarClock}
+          color={maintDue > 0 ? 'bg-amber-500' : 'bg-slate-400'}
+          sub={maintDue > 0 ? { text: 'Schedule soon', color: 'text-amber-600' } : null}
+          onClick={() => navigate('/maintenance')}
+        />
+        <StatCard
+          label="Calibration Due"
+          value={calDue}
+          icon={Gauge}
+          color={calDue > 0 ? 'bg-purple-500' : 'bg-slate-400'}
+          onClick={() => navigate('/calibration')}
+        />
+        <StatCard
+          label="Warranty Expired"
+          value={warranties.stats?.warrantyExpired || 0}
+          icon={ShieldAlert}
+          color={(warranties.stats?.warrantyExpired || 0) > 0 ? 'bg-red-500' : 'bg-slate-400'}
+          sub={(warranties.stats?.warrantyExpired || 0) > 0 ? { text: 'Action required', color: 'text-red-600' } : null}
+          onClick={() => navigate('/warranty-amc?tab=warranty&status=Expired')}
+        />
+        <StatCard
+          label="Warranty Expiring"
+          value={warranties.stats?.warrantyExpiring || 0}
+          icon={ShieldCheck}
+          color={(warranties.stats?.warrantyExpiring || 0) > 0 ? 'bg-amber-500' : 'bg-slate-400'}
+          sub={{ text: 'Within 30 days', color: 'text-slate-400' }}
+          onClick={() => navigate('/warranty-amc?tab=warranty&status=Expiring')}
+        />
+        <StatCard
+          label="AMC Expiring"
+          value={warranties.stats?.amcExpiring || 0}
+          icon={ShieldAlert}
+          color={(warranties.stats?.amcExpiring || 0) > 0 ? 'bg-pink-500' : 'bg-slate-400'}
+          sub={(warranties.stats?.amcExpired || 0) > 0 ? { text: `${warranties.stats.amcExpired} expired`, color: 'text-pink-600' } : { text: 'Within 30 days', color: 'text-slate-400' }}
+          onClick={() => navigate('/warranty-amc?tab=amc')}
+        />
       </div>
 
       {/* Charts */}
