@@ -314,11 +314,12 @@ function EngineerDashboard() {
   if (loading) return <div className="flex items-center justify-center h-64"><div className="h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   const today = new Date(); today.setHours(0,0,0,0);
-  const in7 = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+  const in7 = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 
   const todayMaint = maintenance.filter(m => {
     const d = new Date(m.scheduledDate); d.setHours(0,0,0,0);
-    return d.getTime() === today.getTime();
+    return d.getTime() === today.getTime() || d.getTime() === tomorrow.getTime();
   });
   const openComplaints = complaints.filter(c => !['Completed','Closed','Cancelled'].includes(c.status));
   const overdueMaint = maintenance.filter(m => m.status === 'Overdue');
@@ -347,7 +348,7 @@ function EngineerDashboard() {
         {/* Today's Maintenance */}
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-center justify-between mb-4">
-            <SectionHeader title="Today's Maintenance" />
+            <SectionHeader title="Today's & Scheduled Maintenance" />
             <Link to="/maintenance" className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1">View All <ChevronRight className="h-3 w-3" /></Link>
           </div>
           {todayMaint.length === 0 ? (
@@ -357,16 +358,21 @@ function EngineerDashboard() {
             </div>
           ) : (
             <div className="space-y-3">
-              {todayMaint.map(m => (
-                <div key={m._id} className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                  <Wrench className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-slate-800">{m.equipment?.name}</p>
-                    <p className="text-xs text-slate-500">{m.type} maintenance</p>
+              {todayMaint.map(m => {
+                const isToday = new Date(m.scheduledDate).setHours(0,0,0,0) === today.getTime();
+                return (
+                  <div key={m._id} className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                    <Wrench className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-slate-800">{m.equipment?.name}</p>
+                      <p className="text-xs text-slate-500">
+                        {m.type} maintenance · <span className={isToday ? 'text-blue-700 font-bold' : 'text-slate-600 font-medium'}>{isToday ? 'Today' : 'Tomorrow'}</span>
+                      </p>
+                    </div>
+                    {statusBadge(m.status)}
                   </div>
-                  {statusBadge(m.status)}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

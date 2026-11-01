@@ -136,37 +136,37 @@ const seedData = async () => {
     const equipmentDefs = [
       // Cardiology (staff user's department - so she can see and raise complaints)
       {
-        name: 'ECG Machine',         category: 'Monitoring',   department: departments[4]._id, manufacturer: 'Philips',   modelNumber: 'PageWriter TC70', serialNumber: 'PH-TC70-2024-001', purchaseDate: daysAgo(400), installationDate: daysAgo(380), purchaseCost: 45000, usefulLife: 10, warrantyStart: daysAgo(400), warrantyEnd: daysFromNow(230), amcStart: daysAgo(30), amcEnd: daysFromNow(335), supplierVendor: vendors[2]._id, assignedEngineer: engineerUser._id, roomNumber: 'C-102', building: 'Block A', nextMaintenanceDate: daysFromNow(7), lastMaintenanceDate: daysAgo(83), currentStatus: 'Working', remarks: 'Primary ECG for Cardiology'
+        name: 'ECG Machine',         category: 'Monitoring',   department: departments[4]._id, manufacturer: 'Philips',   modelNumber: 'PageWriter TC70', serialNumber: 'PH-TC70-2024-001', purchaseDate: daysAgo(365), installationDate: daysAgo(350), purchaseCost: 45000, usefulLife: 10, warrantyStart: daysAgo(365), warrantyEnd: daysFromNow(180), amcStart: daysAgo(30), amcEnd: daysFromNow(335), supplierVendor: vendors[2]._id, assignedEngineer: engineerUser._id, roomNumber: 'C-102', building: 'Block A', nextMaintenanceDate: daysFromNow(0), lastMaintenanceDate: daysAgo(30), currentStatus: 'Working', remarks: 'Primary ECG for Cardiology - Routine service scheduled today'
       },
       {
-        name: 'Patient Monitor',     category: 'Monitoring',   department: departments[4]._id, manufacturer: 'Mindray',   modelNumber: 'MEC-2000', serialNumber: 'MR-2000-2025-001', purchaseDate: daysAgo(300), installationDate: daysAgo(285), purchaseCost: 28000, usefulLife: 8, warrantyStart: daysAgo(300), warrantyEnd: daysFromNow(65), amcStart: daysAgo(60), amcEnd: daysFromNow(305), supplierVendor: vendorRecord._id, assignedEngineer: engineerUser._id, roomNumber: 'C-103', building: 'Block A', nextMaintenanceDate: daysFromNow(20), lastMaintenanceDate: daysAgo(70), currentStatus: 'Working'
+        name: 'Patient Monitor',     category: 'Monitoring',   department: departments[4]._id, manufacturer: 'Mindray',   modelNumber: 'MEC-2000', serialNumber: 'MR-2000-2025-001', purchaseDate: daysAgo(200), installationDate: daysAgo(190), purchaseCost: 28000, usefulLife: 8, warrantyStart: daysAgo(200), warrantyEnd: daysFromNow(165), amcStart: daysAgo(20), amcEnd: daysFromNow(345), supplierVendor: vendorRecord._id, assignedEngineer: engineerUser._id, roomNumber: 'C-103', building: 'Block A', nextMaintenanceDate: daysFromNow(5), lastMaintenanceDate: daysAgo(3), currentStatus: 'Working'
       },
       {
-        name: 'Defibrillator',       category: 'Life Support', department: departments[4]._id, manufacturer: 'Philips',   modelNumber: 'HeartStart MRx', serialNumber: 'PH-MRX-2024-003', purchaseDate: daysAgo(500), installationDate: daysAgo(490), purchaseCost: 55000, usefulLife: 12, warrantyStart: daysAgo(500), warrantyEnd: daysFromNow(-30), amcStart: daysAgo(70), amcEnd: daysFromNow(295), supplierVendor: vendors[2]._id, assignedEngineer: engineerUser._id, roomNumber: 'C-101', building: 'Block A', nextMaintenanceDate: daysFromNow(3), lastMaintenanceDate: daysAgo(87), currentStatus: 'Working', remarks: 'Warranty expired'
+        name: 'Defibrillator',       category: 'Life Support', department: departments[4]._id, manufacturer: 'Philips',   modelNumber: 'HeartStart MRx', serialNumber: 'PH-MRX-2024-003', purchaseDate: daysAgo(400), installationDate: daysAgo(390), purchaseCost: 55000, usefulLife: 12, warrantyStart: daysAgo(400), warrantyEnd: daysAgo(15), amcStart: daysAgo(15), amcEnd: daysFromNow(350), supplierVendor: vendors[2]._id, assignedEngineer: engineerUser._id, roomNumber: 'C-101', building: 'Block A', nextMaintenanceDate: daysFromNow(3), lastMaintenanceDate: daysAgo(25), currentStatus: 'Working', remarks: 'Warranty expired - covered under active AMC'
       },
       // Emergency
       {
-        name: 'Ventilator',          category: 'Life Support', department: departments[0]._id, manufacturer: 'Dräger',    modelNumber: 'Evita V500', serialNumber: 'DR-V500-2024-001', purchaseDate: daysAgo(600), installationDate: daysAgo(590), purchaseCost: 95000, usefulLife: 15, warrantyStart: daysAgo(600), warrantyEnd: daysFromNow(165), amcStart: daysAgo(60), amcEnd: daysFromNow(305), supplierVendor: vendors[4]._id, assignedEngineer: engineerUser._id, roomNumber: 'E-101', building: 'Block B', nextMaintenanceDate: daysFromNow(-5), lastMaintenanceDate: daysAgo(95), currentStatus: 'Under Maintenance', remarks: 'Preventive maintenance overdue'
+        name: 'Ventilator',          category: 'Life Support', department: departments[0]._id, manufacturer: 'Dräger',    modelNumber: 'Evita V500', serialNumber: 'DR-V500-2024-001', purchaseDate: daysAgo(500), installationDate: daysAgo(490), purchaseCost: 95000, usefulLife: 15, warrantyStart: daysAgo(500), warrantyEnd: daysFromNow(200), amcStart: daysAgo(30), amcEnd: daysFromNow(335), supplierVendor: vendors[4]._id, assignedEngineer: engineerUser._id, roomNumber: 'E-101', building: 'Block B', nextMaintenanceDate: daysAgo(1), lastMaintenanceDate: daysAgo(91), currentStatus: 'Under Maintenance', remarks: 'Preventive maintenance 1 day overdue - under active inspection'
       },
       {
-        name: 'Ultrasound Machine',  category: 'Imaging',      department: departments[1]._id, manufacturer: 'GE',        modelNumber: 'Voluson E10', serialNumber: 'GE-E10-2023-001', purchaseDate: daysAgo(730), installationDate: daysAgo(715), purchaseCost: 120000, usefulLife: 12, warrantyStart: daysAgo(730), warrantyEnd: daysFromNow(-100), amcStart: daysAgo(50), amcEnd: daysFromNow(315), supplierVendor: vendors[0]._id, assignedEngineer: engineerUser._id, roomNumber: 'R-201', building: 'Block A', nextMaintenanceDate: daysFromNow(30), lastMaintenanceDate: daysAgo(60), currentStatus: 'Working'
+        name: 'Ultrasound Machine',  category: 'Imaging',      department: departments[1]._id, manufacturer: 'GE',        modelNumber: 'Voluson E10', serialNumber: 'GE-E10-2023-001', purchaseDate: daysAgo(600), installationDate: daysAgo(585), purchaseCost: 120000, usefulLife: 12, warrantyStart: daysAgo(600), warrantyEnd: daysFromNow(130), amcStart: daysAgo(45), amcEnd: daysFromNow(320), supplierVendor: vendors[0]._id, assignedEngineer: engineerUser._id, roomNumber: 'R-201', building: 'Block A', nextMaintenanceDate: daysFromNow(7), lastMaintenanceDate: daysAgo(45), currentStatus: 'Working'
       },
       // ICU
       {
-        name: 'Anesthesia Machine',  category: 'Life Support', department: departments[3]._id, manufacturer: 'Dräger',    modelNumber: 'Perseus A500', serialNumber: 'DR-PA500-2024-001', purchaseDate: daysAgo(450), installationDate: daysAgo(440), purchaseCost: 85000, usefulLife: 15, warrantyStart: daysAgo(450), warrantyEnd: daysFromNow(275), amcStart: daysAgo(20), amcEnd: daysFromNow(345), supplierVendor: vendors[4]._id, assignedEngineer: engineerUser._id, roomNumber: 'OT-301', building: 'Block B', nextMaintenanceDate: daysFromNow(45), lastMaintenanceDate: daysAgo(45), currentStatus: 'Working'
+        name: 'Anesthesia Machine',  category: 'Life Support', department: departments[3]._id, manufacturer: 'Dräger',    modelNumber: 'Perseus A500', serialNumber: 'DR-PA500-2024-001', purchaseDate: daysAgo(350), installationDate: daysAgo(340), purchaseCost: 85000, usefulLife: 15, warrantyStart: daysAgo(350), warrantyEnd: daysFromNow(215), amcStart: daysAgo(20), amcEnd: daysFromNow(345), supplierVendor: vendors[4]._id, assignedEngineer: engineerUser._id, roomNumber: 'OT-301', building: 'Block B', nextMaintenanceDate: daysFromNow(18), lastMaintenanceDate: daysAgo(45), currentStatus: 'Working'
       },
       {
-        name: 'MRI Scanner',         category: 'Imaging',      department: departments[1]._id, manufacturer: 'Siemens',   modelNumber: 'MAGNETOM Sola', serialNumber: 'SI-SOLA-2022-001', purchaseDate: daysAgo(900), installationDate: daysAgo(870), purchaseCost: 750000, usefulLife: 15, warrantyStart: daysAgo(900), warrantyEnd: daysFromNow(180), amcStart: daysAgo(15), amcEnd: daysFromNow(350), supplierVendor: vendors[1]._id, assignedEngineer: engineerUser._id, roomNumber: 'R-101', building: 'Block A', nextMaintenanceDate: daysFromNow(60), lastMaintenanceDate: daysAgo(30), currentStatus: 'Working'
+        name: 'MRI Scanner',         category: 'Imaging',      department: departments[1]._id, manufacturer: 'Siemens',   modelNumber: 'MAGNETOM Sola', serialNumber: 'SI-SOLA-2022-001', purchaseDate: daysAgo(700), installationDate: daysAgo(680), purchaseCost: 750000, usefulLife: 15, warrantyStart: daysAgo(700), warrantyEnd: daysFromNow(260), amcStart: daysAgo(10), amcEnd: daysFromNow(355), supplierVendor: vendors[1]._id, assignedEngineer: engineerUser._id, roomNumber: 'R-101', building: 'Block A', nextMaintenanceDate: daysFromNow(30), lastMaintenanceDate: daysAgo(8), currentStatus: 'Working'
       },
       {
-        name: 'Blood Gas Analyzer',  category: 'Laboratory',   department: departments[6]._id, manufacturer: 'Siemens',   modelNumber: 'RAPIDPoint 500e', serialNumber: 'SI-RP500-2024-001', purchaseDate: daysAgo(250), installationDate: daysAgo(240), purchaseCost: 35000, usefulLife: 8, warrantyStart: daysAgo(250), warrantyEnd: daysFromNow(480), amcStart: null, amcEnd: null, supplierVendor: vendors[1]._id, assignedEngineer: engineerUser._id, roomNumber: 'L-401', building: 'Block A', nextMaintenanceDate: daysFromNow(60), lastMaintenanceDate: daysAgo(30), currentStatus: 'Working'
+        name: 'Blood Gas Analyzer',  category: 'Laboratory',   department: departments[6]._id, manufacturer: 'Siemens',   modelNumber: 'RAPIDPoint 500e', serialNumber: 'SI-RP500-2024-001', purchaseDate: daysAgo(180), installationDate: daysAgo(170), purchaseCost: 35000, usefulLife: 8, warrantyStart: daysAgo(180), warrantyEnd: daysFromNow(400), amcStart: null, amcEnd: null, supplierVendor: vendors[1]._id, assignedEngineer: engineerUser._id, roomNumber: 'L-401', building: 'Block A', nextMaintenanceDate: daysFromNow(45), lastMaintenanceDate: daysAgo(30), currentStatus: 'Working'
       },
       {
-        name: 'Infusion Pump',       category: 'Therapeutic',  department: departments[2]._id, manufacturer: 'Mindray',   modelNumber: 'BeneFusion nVP', serialNumber: 'MR-NVP-2024-001', purchaseDate: daysAgo(150), installationDate: daysAgo(145), purchaseCost: 8500, usefulLife: 7, warrantyStart: daysAgo(150), warrantyEnd: daysFromNow(580), amcStart: null, amcEnd: null, supplierVendor: vendorRecord._id, assignedEngineer: engineerUser._id, roomNumber: 'ICU-201', building: 'Block B', nextMaintenanceDate: daysFromNow(180), lastMaintenanceDate: daysAgo(5), currentStatus: 'Working'
+        name: 'Infusion Pump',       category: 'Therapeutic',  department: departments[2]._id, manufacturer: 'Mindray',   modelNumber: 'BeneFusion nVP', serialNumber: 'MR-NVP-2024-001', purchaseDate: daysAgo(90), installationDate: daysAgo(85), purchaseCost: 8500, usefulLife: 7, warrantyStart: daysAgo(90), warrantyEnd: daysFromNow(640), amcStart: null, amcEnd: null, supplierVendor: vendorRecord._id, assignedEngineer: engineerUser._id, roomNumber: 'ICU-201', building: 'Block B', nextMaintenanceDate: daysFromNow(1), lastMaintenanceDate: daysAgo(30), currentStatus: 'Working', remarks: 'Routine preventive service scheduled for tomorrow'
       },
       // Disposed equipment example
       {
-        name: 'Old X-Ray Unit',      category: 'Imaging',      department: departments[1]._id, manufacturer: 'Siemens',   modelNumber: 'MULTIX Fusion', serialNumber: 'SI-MF-2015-001', purchaseDate: daysAgo(3650), installationDate: daysAgo(3640), purchaseCost: 280000, usefulLife: 10, warrantyStart: daysAgo(3650), warrantyEnd: daysAgo(2920), amcStart: null, amcEnd: null, supplierVendor: vendors[1]._id, assignedEngineer: null, roomNumber: 'R-102', building: 'Block A', currentStatus: 'Disposed', isDisposed: true, remarks: 'End of useful life'
+        name: 'Old X-Ray Unit',      category: 'Imaging',      department: departments[1]._id, manufacturer: 'Siemens',   modelNumber: 'MULTIX Fusion', serialNumber: 'SI-MF-2015-001', purchaseDate: daysAgo(3650), installationDate: daysAgo(3640), purchaseCost: 280000, usefulLife: 10, warrantyStart: daysAgo(3650), warrantyEnd: daysAgo(2920), amcStart: null, amcEnd: null, supplierVendor: vendors[1]._id, assignedEngineer: null, roomNumber: 'R-102', building: 'Block A', currentStatus: 'Disposed', isDisposed: true, remarks: 'End of useful life - decommissioned and scrapped'
       }
     ];
 
@@ -184,55 +184,116 @@ const seedData = async () => {
     // ─── 5. Maintenance Records ────────────────────────────────────────────────
     console.log('Seeding Maintenance records...');
 
-    const ecgMachine = createdEquipment[0]; // ECG Machine in Cardiology
-    const ventilator = createdEquipment[3]; // Ventilator in Emergency (overdue)
+    const ecgMachine = createdEquipment[0];    // ECG Machine (Scheduled Today)
+    const patientMonitor = createdEquipment[1]; // Patient Monitor (Completed with checklist)
+    const ventilator = createdEquipment[3];    // Ventilator (Overdue 1 day)
+    const mriScanner = createdEquipment[6];    // MRI Scanner (Completed with spare parts)
+    const infusionPump = createdEquipment[8];  // Infusion Pump (Scheduled Tomorrow)
 
     const maintenanceRecords = [
       {
         equipment: ecgMachine._id,
-        type: 'Preventive',
-        scheduledDate: daysAgo(83),
-        completedDate: daysAgo(82),
-        engineer: engineerUser._id,
-        status: 'Completed',
-        workDescription: 'Full preventive maintenance performed. Electrodes checked, calibration verified.',
-        partsReplaced: 'Lead wires replaced',
-        cost: 1200,
-        remarks: 'Equipment functioning optimally.',
-        nextServiceDate: daysFromNow(7)
-      },
-      {
-        equipment: ecgMachine._id,
-        type: 'Preventive',
-        scheduledDate: daysFromNow(7),
+        type: 'Routine',
+        scheduledDate: daysFromNow(0), // TODAY
         engineer: engineerUser._id,
         status: 'Scheduled',
-        workDescription: '',
+        workDescription: 'Monthly routine electrical safety inspection, lead continuity testing, and printer calibration.',
         cost: 0,
-        nextServiceDate: daysFromNow(97)
+        nextServiceDate: daysFromNow(30),
+        checklistItems: [
+          { label: 'Power supply & battery backup test', status: 'Pending', notes: '' },
+          { label: 'Visual casing & connector inspection', status: 'Pending', notes: '' },
+          { label: '12-lead cable continuity test', status: 'Pending', notes: '' },
+          { label: 'Thermal printer test print', status: 'Pending', notes: '' }
+        ]
+      },
+      {
+        equipment: infusionPump._id,
+        type: 'Preventive',
+        scheduledDate: daysFromNow(1), // TOMORROW (Presentation day!)
+        engineer: engineerUser._id,
+        status: 'Scheduled',
+        workDescription: 'Quarterly flow rate accuracy check, occlusion pressure sensor calibration, and battery run-time verification.',
+        cost: 0,
+        nextServiceDate: daysFromNow(90),
+        checklistItems: [
+          { label: 'Flow rate accuracy test (±2% tolerance)', status: 'Pending', notes: '' },
+          { label: 'Occlusion sensor pressure response', status: 'Pending', notes: '' },
+          { label: 'Air-in-line ultrasonic detector test', status: 'Pending', notes: '' },
+          { label: 'Battery hold charge test (minimum 4 hours)', status: 'Pending', notes: '' }
+        ]
       },
       {
         equipment: ventilator._id,
         type: 'Preventive',
-        scheduledDate: daysFromNow(-5),
+        scheduledDate: daysAgo(1), // Overdue by 1 day
         engineer: engineerUser._id,
         status: 'Overdue',
-        workDescription: '',
+        workDescription: 'Scheduled full preventive overhaul: O2 sensor replacement and circuit leak test.',
         cost: 0,
-        remarks: 'Maintenance overdue - schedule immediately'
+        remarks: 'Maintenance 1 day overdue - priority service requested by ICU'
       },
       {
-        equipment: createdEquipment[6]._id, // MRI Scanner
-        type: 'Routine',
-        scheduledDate: daysAgo(30),
-        completedDate: daysAgo(29),
+        equipment: patientMonitor._id,
+        type: 'Preventive',
+        scheduledDate: daysAgo(3),
+        completedDate: daysAgo(3),
         engineer: engineerUser._id,
         status: 'Completed',
-        workDescription: 'Magnetic field calibration, cooling system check, gradient coil inspection.',
-        partsReplaced: 'Coolant filter replaced',
+        workDescription: 'Preventive maintenance performed. Replaced damaged SpO2 sensor cable and updated module firmware.',
+        partsReplaced: 'SpO2 Finger Sensor Assembly',
+        cost: 1450,
+        remarks: 'Monitor calibrated and verified for ICU duty.',
+        nextServiceDate: daysFromNow(5),
+        checklistItems: [
+          { label: 'Power supply & battery backup test', status: 'Pass', notes: 'Battery health 99%' },
+          { label: 'Visual casing & display inspection', status: 'Pass', notes: 'Touch screen responsive' },
+          { label: 'ECG / NIBP / SpO2 sensor input verification', status: 'Pass', notes: 'Pulse oximetry signal nominal' },
+          { label: 'Audio and visual alarm functional check', status: 'Pass', notes: 'All warning tones working' }
+        ],
+        spareParts: [
+          {
+            partName: 'Adult Reusable SpO2 Sensor',
+            partNumber: 'MR-SPO2-AD',
+            quantity: 1,
+            unitCost: 1450,
+            totalPrice: 1450,
+            suppliedBy: 'Mindray Healthcare',
+            replacementDate: daysAgo(3),
+            notes: 'Replaced fluctuating sensor probe'
+          }
+        ]
+      },
+      {
+        equipment: mriScanner._id,
+        type: 'Preventive',
+        scheduledDate: daysAgo(8),
+        completedDate: daysAgo(8),
+        engineer: engineerUser._id,
+        status: 'Completed',
+        workDescription: 'Cryogen levels check, gradient coil thermal inspection, and magnetic field calibration.',
+        partsReplaced: 'Compressor Helium Adsorber Filter',
         cost: 8500,
-        remarks: 'All systems nominal.',
-        nextServiceDate: daysFromNow(60)
+        remarks: 'All magnetic and imaging tolerances certified.',
+        nextServiceDate: daysFromNow(30),
+        checklistItems: [
+          { label: 'Cryogen / liquid helium level check', status: 'Pass', notes: 'Helium level at 94%' },
+          { label: 'RF coil connectivity & signal SNR check', status: 'Pass', notes: 'Signal-to-noise ratio within spec' },
+          { label: 'Gradient coil cooling system pressure', status: 'Pass', notes: 'Cooling loop 4.2 bar nominal' },
+          { label: 'Patient table motorized transport check', status: 'Pass', notes: 'Smooth translation' }
+        ],
+        spareParts: [
+          {
+            partName: 'Helium Adsorber Capsule',
+            partNumber: 'SI-ADS-500',
+            quantity: 1,
+            unitCost: 8500,
+            totalPrice: 8500,
+            suppliedBy: 'Siemens Healthineers',
+            replacementDate: daysAgo(8),
+            notes: 'Scheduled annual adsorber exchange'
+          }
+        ]
       }
     ];
 
@@ -246,30 +307,30 @@ const seedData = async () => {
       equipment: ecgMachine._id,
       department: departments[4]._id, // Cardiology
       raisedBy: staffUser._id,
-      issueDescription: 'ECG machine producing noisy readings. Intermittent signal loss observed during patient monitoring.',
+      issueDescription: 'ECG trace showing intermittent lead artifact on chest leads V1-V3.',
       priority: 'High',
       status: 'Assigned',
       assignedEngineer: engineerUser._id,
-      additionalNotes: 'Happens mostly in humid conditions.',
+      additionalNotes: 'Occurs primarily when patient moves slightly.',
       updates: [
-        { status: 'Open', note: 'Complaint raised.', updatedBy: staffUser._id, timestamp: daysAgo(5) },
-        { status: 'Assigned', note: 'Assigned to Eng. James Wilson for investigation.', updatedBy: adminUser._id, timestamp: daysAgo(4) }
+        { status: 'Open', note: 'Complaint raised by ward nurse.', updatedBy: staffUser._id, timestamp: daysAgo(1) },
+        { status: 'Assigned', note: 'Assigned to Tech. James Wilson for lead continuity inspection.', updatedBy: adminUser._id, timestamp: daysAgo(1) }
       ]
     });
     await complaint1.save();
 
     const complaint2 = new Complaint({
-      equipment: createdEquipment[1]._id, // Patient Monitor
+      equipment: patientMonitor._id,
       department: departments[4]._id,
       raisedBy: staffUser._id,
-      issueDescription: 'SpO2 probe not reading correctly. Values fluctuating between 85-98% without patient condition change.',
-      priority: 'Critical',
+      issueDescription: 'NIBP cuff taking longer than usual to inflate during routine interval readings.',
+      priority: 'Medium',
       status: 'In Progress',
       assignedEngineer: engineerUser._id,
       updates: [
-        { status: 'Open', note: 'Complaint raised.', updatedBy: staffUser._id, timestamp: daysAgo(3) },
+        { status: 'Open', note: 'Complaint submitted.', updatedBy: staffUser._id, timestamp: daysAgo(2) },
         { status: 'Assigned', note: 'Assigned to engineer.', updatedBy: adminUser._id, timestamp: daysAgo(2) },
-        { status: 'In Progress', note: 'Engineer investigating probe connection and sensor calibration.', updatedBy: engineerUser._id, timestamp: daysAgo(1) }
+        { status: 'In Progress', note: 'Technician checking pneumatic valve and tubing connector seal.', updatedBy: engineerUser._id, timestamp: daysAgo(1) }
       ]
     });
     await complaint2.save();
@@ -278,15 +339,15 @@ const seedData = async () => {
       equipment: ventilator._id,
       department: departments[0]._id, // Emergency
       raisedBy: adminUser._id,
-      issueDescription: 'Ventilator alarm triggering false positive pressure alarms. Checked circuit - no leaks found.',
-      priority: 'Critical',
+      issueDescription: 'Ventilator touch screen calibration slightly misaligned on right edge.',
+      priority: 'Low',
       status: 'Completed',
       assignedEngineer: engineerUser._id,
       updates: [
-        { status: 'Open', note: 'Complaint raised.', updatedBy: adminUser._id, timestamp: daysAgo(10) },
-        { status: 'Assigned', note: 'Assigned.', updatedBy: adminUser._id, timestamp: daysAgo(9) },
-        { status: 'In Progress', note: 'Engineer identified faulty pressure sensor.', updatedBy: engineerUser._id, timestamp: daysAgo(8) },
-        { status: 'Completed', note: 'Pressure sensor replaced. Alarm tested - all clear.', updatedBy: engineerUser._id, timestamp: daysAgo(6) }
+        { status: 'Open', note: 'Complaint reported.', updatedBy: adminUser._id, timestamp: daysAgo(5) },
+        { status: 'Assigned', note: 'Assigned.', updatedBy: adminUser._id, timestamp: daysAgo(5) },
+        { status: 'In Progress', note: 'Touch digitizer re-calibrated via service mode.', updatedBy: engineerUser._id, timestamp: daysAgo(4) },
+        { status: 'Completed', note: 'Screen response verified and sanitized.', updatedBy: engineerUser._id, timestamp: daysAgo(3) }
       ]
     });
     await complaint3.save();
@@ -299,36 +360,46 @@ const seedData = async () => {
     await Calibration.insertMany([
       {
         equipment: ecgMachine._id,
-        calibrationDate: daysAgo(120),
-        dueDate: daysFromNow(60),
+        calibrationDate: daysAgo(90),
+        dueDate: daysFromNow(3), // Due in 3 days!
         engineer: engineerUser._id,
         result: 'Pass',
-        observations: 'All leads within ±2% tolerance. Calibration certificate issued.',
+        observations: 'All leads within ±1.5% tolerance. Ready for periodic recalibration.',
         status: 'Completed',
+        certificateUpload: ''
+      },
+      {
+        equipment: infusionPump._id,
+        calibrationDate: daysAgo(180),
+        dueDate: daysFromNow(1), // Due Tomorrow!
+        engineer: engineerUser._id,
+        result: 'Pass',
+        observations: 'Annual flow delivery calibration due tomorrow.',
+        status: 'Pending',
         certificateUpload: ''
       },
       {
         equipment: ventilator._id,
-        calibrationDate: daysAgo(200),
-        dueDate: daysFromNow(-20),
+        calibrationDate: daysAgo(185),
+        dueDate: daysAgo(1), // Overdue 1 day
         engineer: engineerUser._id,
         result: 'Pass',
-        observations: 'Flow sensor calibrated. Due for re-calibration.',
+        observations: 'Flow sensor calibrated. 1 day overdue for renewal.',
         status: 'Overdue',
         certificateUpload: ''
       },
       {
-        equipment: createdEquipment[6]._id, // MRI
-        calibrationDate: daysAgo(90),
-        dueDate: daysFromNow(90),
+        equipment: mriScanner._id,
+        calibrationDate: daysAgo(30),
+        dueDate: daysFromNow(60),
         engineer: engineerUser._id,
         result: 'Pass',
-        observations: 'Magnetic field homogeneity within spec. Gradient linearity verified.',
+        observations: 'Magnetic field homogeneity certified within spec.',
         status: 'Completed',
         certificateUpload: ''
       }
     ]);
-    console.log('Seeded 3 calibration records.');
+    console.log('Seeded 4 calibration records.');
 
     // ─── 8. Transfer History ────────────────────────────────────────────────────
     console.log('Seeding Transfer records...');
@@ -338,9 +409,9 @@ const seedData = async () => {
         equipment: createdEquipment[4]._id, // Ultrasound
         previousDepartment: departments[4]._id, // Cardiology
         newDepartment: departments[1]._id,       // Radiology
-        transferDate: daysAgo(200),
+        transferDate: daysAgo(14),
         approvedBy: adminUser._id,
-        reason: 'Radiology department received a new patient load. Ultrasound relocated for better utilization.',
+        reason: 'Radiology department received higher patient volume. Relocated for optimal equipment utilization.',
         currentLocation: { roomNumber: 'R-201', building: 'Block A' }
       }
     ]);
@@ -352,12 +423,12 @@ const seedData = async () => {
 
     await DisposalRecord.create({
       equipment: disposedEquip._id,
-      disposalDate: daysAgo(30),
-      reason: 'Equipment reached end of useful life (10 years). Repair costs exceed 80% of replacement value.',
+      disposalDate: daysAgo(7),
+      reason: 'Equipment reached end of useful life (10 years). Repair costs exceed replacement value.',
       disposalMethod: 'Medical Equipment Scrapping via certified vendor',
       scrapValue: 15000,
       approvedBy: adminUser._id,
-      remarks: 'Replaced by new Digital X-Ray System.'
+      remarks: 'Decommissioned safely. Replaced by Digital X-Ray System.'
     });
     console.log('Seeded 1 disposal record.');
 
@@ -365,14 +436,14 @@ const seedData = async () => {
     console.log('Seeding Notifications...');
 
     await Notification.insertMany([
-      { role: 'Admin',                title: 'Warranty Expiring Soon',       message: 'Defibrillator (EQ-2026-003) warranty has expired. Please renew.', category: 'Warning' },
-      { role: 'Admin',                title: 'Maintenance Overdue',          message: 'Ventilator (EQ-2026-004) preventive maintenance is 5 days overdue.', category: 'Critical' },
-      { role: 'Admin',                title: 'Calibration Overdue',          message: 'Ventilator (EQ-2026-004) calibration is overdue by 20 days.', category: 'Critical' },
-      { role: 'Admin',                title: 'New Complaint Raised',         message: 'Complaint raised for ECG Machine (EQ-2026-001) — High Priority.', category: 'Warning' },
-      { user: engineerUser._id,       title: 'Complaint Assigned',           message: 'Complaint for Patient Monitor assigned to you. Please investigate.', category: 'Info' },
-      { user: engineerUser._id,       title: 'Maintenance Due in 7 Days',    message: 'ECG Machine (EQ-2026-001) preventive maintenance due in 7 days.', category: 'Warning' },
-      { user: staffUser._id,          title: 'Complaint Assigned to Engineer', message: 'Your complaint for ECG Machine has been assigned to Eng. James Wilson.', category: 'Info' },
-      { role: 'Vendor',               title: 'Service Information',          message: 'Patient Monitor (EQ-2026-002) associated with your company has an open complaint.', category: 'Info' }
+      { role: 'Admin',                title: 'Maintenance Due Tomorrow',     message: 'Infusion Pump (EQ-2026-009) quarterly maintenance is scheduled for tomorrow.', category: 'Info' },
+      { role: 'Admin',                title: 'Maintenance Due Today',        message: 'ECG Machine (EQ-2026-001) routine maintenance is scheduled for today.', category: 'Warning' },
+      { role: 'Admin',                title: 'Maintenance Overdue',          message: 'Ventilator (EQ-2026-004) preventive maintenance is 1 day overdue.', category: 'Critical' },
+      { role: 'Admin',                title: 'Warranty Expired',             message: 'Defibrillator (EQ-2026-003) warranty expired 15 days ago. Active under AMC.', category: 'Warning' },
+      { user: engineerUser._id,       title: 'Task Scheduled for Today',     message: 'ECG Machine (EQ-2026-001) routine inspection scheduled for today.', category: 'Info' },
+      { user: engineerUser._id,       title: 'Task Scheduled for Tomorrow',  message: 'Infusion Pump (EQ-2026-009) preventive maintenance scheduled for tomorrow.', category: 'Info' },
+      { user: staffUser._id,          title: 'Complaint Update',             message: 'Complaint for ECG Machine has been assigned to Tech. James Wilson.', category: 'Info' },
+      { role: 'Vendor',               title: 'Service Notification',         message: 'Patient Monitor (EQ-2026-002) completed recent sensor maintenance.', category: 'Success' }
     ]);
     console.log('Seeded 8 notifications.');
 
