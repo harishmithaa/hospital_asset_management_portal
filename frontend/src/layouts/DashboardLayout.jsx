@@ -105,6 +105,7 @@ export default function DashboardLayout({ children }) {
   const { user, logout } = useAuth();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [collapsed, setCollapsed]     = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen]     = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -112,6 +113,13 @@ export default function DashboardLayout({ children }) {
   const location  = useLocation();
   const notifRef   = useRef(null);
   const profileRef = useRef(null);
+
+  // Close mobile menu and dropdowns on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setNotifOpen(false);
+    setProfileOpen(false);
+  }, [location.pathname]);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -123,7 +131,12 @@ export default function DashboardLayout({ children }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const handleLogout = () => { setProfileOpen(false); logout(); navigate('/login'); };
+  const handleLogout = () => {
+    setProfileOpen(false);
+    setMobileMenuOpen(false);
+    logout();
+    navigate('/login');
+  };
 
   const navItems  = NAV_CONFIG[user?.role] || [];
   const roleColor = ROLE_COLORS[user?.role] || 'from-blue-600 to-indigo-700';
@@ -131,10 +144,106 @@ export default function DashboardLayout({ children }) {
   const title     = getPageTitle(location.pathname, user?.role);
 
   return (
-    <div className="min-h-screen flex bg-slate-50">
+    <div className="min-h-screen flex bg-slate-50 relative">
 
-      {/* ─── Sidebar ─────────────────────────────────────────────── */}
-      <aside className={`fixed inset-y-0 left-0 z-40 bg-white border-r border-slate-200 transition-all duration-300 flex flex-col shadow-sm ${collapsed ? 'w-[70px]' : 'w-64'}`}>
+      {/* ─── Mobile Backdrop ───────────────────────────────────────── */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 md:hidden transition-opacity duration-300"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* ─── Mobile Sidebar Drawer ─────────────────────────────────── */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white flex flex-col shadow-2xl transition-transform duration-300 ease-in-out md:hidden ${
+          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Brand Header */}
+        <div className={`h-16 border-b border-slate-100 flex items-center justify-between px-4 bg-gradient-to-r ${roleColor}`}>
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center flex-shrink-0">
+              <span className="text-white font-black text-sm">H</span>
+            </div>
+            <div>
+              <p className="text-white font-bold text-sm leading-tight">HAMS Portal</p>
+              <p className="text-white/70 text-[10px]">Medical Equipment Mgmt</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+            aria-label="Close menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* User Info */}
+        <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/70">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0 overflow-hidden border border-slate-300">
+              {user?.profileImage ? (
+                <img src={getFileUrl(user.profileImage)} alt="avatar" className="h-9 w-9 rounded-full object-cover" />
+              ) : (
+                <User className="h-5 w-5 text-slate-500" />
+              )}
+            </div>
+            <div className="overflow-hidden">
+              <p className="text-xs font-semibold text-slate-800 truncate">{user?.name}</p>
+              <span className={`inline-block text-[10px] font-medium px-1.5 py-0.5 rounded ${roleBadge}`}>
+                {user?.role}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Links */}
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          {navItems.map((item) => (
+            <NavLink
+              key={'mob-' + item.path + item.name}
+              to={item.path}
+              end={item.path === '/dashboard'}
+              onClick={() => setMobileMenuOpen(false)}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  isActive
+                    ? `bg-gradient-to-r ${roleColor} text-white shadow-sm font-semibold`
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`
+              }
+            >
+              <item.icon className="h-5 w-5 flex-shrink-0" />
+              <span>{item.name}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* Profile & Logout */}
+        <div className="p-3 border-t border-slate-100 space-y-1">
+          <NavLink
+            to="/profile"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+          >
+            <User className="h-4 w-4 text-slate-500" />
+            <span>My Profile</span>
+          </NavLink>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+          >
+            <LogOut className="h-4 w-4 text-red-500" />
+            <span>Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* ─── Desktop Sidebar ──────────────────────────────────────── */}
+      <aside className={`hidden md:flex flex-col fixed inset-y-0 left-0 z-40 bg-white border-r border-slate-200 transition-all duration-300 shadow-sm ${collapsed ? 'w-[70px]' : 'w-64'}`}>
 
         {/* Brand */}
         <div className={`h-16 border-b border-slate-100 flex items-center px-4 gap-3 bg-gradient-to-r ${roleColor}`}>
@@ -150,6 +259,7 @@ export default function DashboardLayout({ children }) {
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="ml-auto text-white/70 hover:text-white transition-colors flex-shrink-0"
+            aria-label="Toggle sidebar collapse"
           >
             {collapsed ? <Menu className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </button>
@@ -211,17 +321,27 @@ export default function DashboardLayout({ children }) {
       </aside>
 
       {/* ─── Main Content ─────────────────────────────────────────── */}
-      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${collapsed ? 'pl-[70px]' : 'pl-64'}`}>
+      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 w-full pl-0 ${collapsed ? 'md:pl-[70px]' : 'md:pl-64'}`}>
 
         {/* Top Header */}
-        <header className="sticky top-0 z-30 h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6 shadow-sm">
-          <h1 className="text-base font-bold text-slate-800">{title}</h1>
+        <header className="sticky top-0 z-30 h-14 bg-white border-b border-slate-200 flex items-center justify-between px-3 sm:px-6 shadow-sm">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            {/* Mobile menu toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden h-9 w-9 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 active:bg-slate-200 transition-colors flex-shrink-0"
+              aria-label="Open mobile menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <h1 className="text-sm sm:text-base font-bold text-slate-800 truncate">{title}</h1>
+          </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             {/* Scan QR Button */}
             <button
               onClick={() => setScannerOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-semibold transition-all border border-blue-200 shadow-sm"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-semibold transition-all border border-blue-200 shadow-sm"
               title="Scan Equipment QR Code"
             >
               <QrCode className="h-4 w-4 text-blue-600" />
@@ -326,7 +446,7 @@ export default function DashboardLayout({ children }) {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-6 overflow-y-auto">
+        <main className="flex-1 p-3.5 sm:p-5 md:p-6 overflow-y-auto">
           {children}
         </main>
       </div>

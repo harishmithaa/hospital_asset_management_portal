@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
-import { QrCode, X, Search, Camera, CheckCircle2, AlertCircle, ArrowRight, ExternalLink, Wrench, Plus, Gauge } from 'lucide-react';
+import { QrCode, X, Search, Camera, CheckCircle2, AlertCircle, ArrowRight, ExternalLink, Wrench, Plus, Gauge, SwitchCamera, RefreshCw } from 'lucide-react';
 import { equipmentAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -12,13 +12,17 @@ export default function QRScannerModal({ isOpen, onClose }) {
   const [equipmentList, setEquipmentList] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [scannedResult, setScannedResult] = useState(null);
-  const [scannedEquipment, setScannedEquipment] = useState(null);
   const [scanError, setScanError] = useState(null);
   const [loadingEq, setLoadingEq] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
 
-  const scannerRef = useRef(null);
+  // Camera selection & switching state
+  const [cameras, setCameras] = useState([]);
+  const [selectedCameraId, setSelectedCameraId] = useState(null);
+  const [facingMode, setFacingMode] = useState('environment'); // default to 'environment' (back camera)
+  const [isSwitchingCamera, setIsSwitchingCamera] = useState(false);
+
   const html5QrcodeRef = useRef(null);
 
   // Load equipment for quick lookup tab
@@ -34,7 +38,6 @@ export default function QRScannerModal({ isOpen, onClose }) {
     } else {
       stopScanner();
       setScannedResult(null);
-      setScannedEquipment(null);
       setScanError(null);
       setCameraError(null);
     }
@@ -42,7 +45,7 @@ export default function QRScannerModal({ isOpen, onClose }) {
 
   // Start Camera Scanner
   useEffect(() => {
-    if (isOpen && activeTab === 'camera' && !scannedEquipment) {
+    if (isOpen && activeTab === 'camera') {
       startScanner();
     } else {
       stopScanner();
@@ -50,43 +53,104 @@ export default function QRScannerModal({ isOpen, onClose }) {
     return () => {
       stopScanner();
     };
-  }, [isOpen, activeTab, scannedEquipment]);
+  }, [isOpen, activeTab]);
 
-  const startScanner = async () => {
+  const startScanner = async (targetOverride) => {
     setCameraError(null);
     try {
       if (html5QrcodeRef.current) {
         await stopScanner();
       }
 
-      // Check camera permission / devices
-      const devices = await Html5Qrcode.getCameras();
-      if (!devices || devices.length === 0) {
-        setCameraError('No camera found on this device. Use manual lookup tab below.');
-        return;
+      // Check camera devices
+      let devices = [];
+      try {
+        devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length > 0) {
+          setCameras(devices);
+        }
+      } catch (err) {
+        console.warn('Could not enumerate cameras prior to permission:', err);
       }
 
       const html5Qrcode = new Html5Qrcode('qr-reader-container');
       html5QrcodeRef.current = html5Qrcode;
 
-      const cameraId = devices[devices.length - 1]?.id || devices[0]?.id;
+      // Determine camera config:
+      // 1. Explicit override (when switching cameras)
+      // 2. Previously selected device ID
+      // 3. Known back camera device ID from labels
+      // 4. Fallback to standard MediaTrackConstraints: { facingMode: "environment" } (rear camera on mobile)
+      let cameraConfig = targetOverride;
+      if (!cameraConfig) {
+        if (selectedCameraId) {
+          cameraConfig = selectedCameraId;
+        } else if (devices.length > 0) {
+          const backCam = devices.find(d => {
+            const l = (d.label || '').toLowerCase();
+            return l.includes('back') || l.includes('rear') || l.includes('environment');
+          });
+          if (backCam) {
+            cameraConfig = backCam.id;
+            setSelectedCameraId(backCam.id);
+            setFacingMode('environment');
+          } else {
+            cameraConfig = { facingMode: facingMode || 'environment' };
+          }
+        } else {
+          cameraConfig = { facingMode: facingMode || 'environment' };
+        }
+      }
 
       await html5Qrcode.start(
-        cameraId,
+        cameraConfig,
         {
           fps: 10,
-          qrbox: { width: 220, height: 220 }
+          qrbox: (viewfinderWidth, viewfinderHeight) => {
+            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            const qrEdge = Math.floor(minEdge * 0.72);
+            return { width: Math.max(200, qrEdge), height: Math.max(200, qrEdge) };
+          },
+          aspectRatio: 1.0,
         },
         (decodedText) => {
           handleDecodedText(decodedText);
         },
         () => {
-          // ignore scan errors (frame by frame)
+          // ignore scan frame errors
         }
       );
       setIsScanning(true);
+
+      // Once permission is granted, camera labels become available. Query them again:
+      try {
+        const freshDevices = await Html5Qrcode.getCameras();
+        if (freshDevices && freshDevices.length > 0) {
+          setCameras(freshDevices);
+        }
+      } catch (_) {}
     } catch (err) {
-      console.warn('Camera scanner start error:', err);
+      console.warn('Camera scanner start error with primary config, attempting fallback:', err);
+      // Fallback: If { facingMode: "environment" } fails on PC/laptop webcam,
+      // fallback to the first available camera or user facing mode:
+      try {
+        const freshDevices = await Html5Qrcode.getCameras();
+        if (freshDevices && freshDevices.length > 0) {
+          setCameras(freshDevices);
+          const fallbackId = freshDevices[0].id;
+          setSelectedCameraId(fallbackId);
+          await html5QrcodeRef.current.start(
+            fallbackId,
+            { fps: 10, qrbox: { width: 220, height: 220 } },
+            (decodedText) => handleDecodedText(decodedText),
+            () => {}
+          );
+          setIsScanning(true);
+          return;
+        }
+      } catch (fallbackErr) {
+        console.error('All camera attempts failed:', fallbackErr);
+      }
       setCameraError('Camera access denied or unavailable. Use the manual lookup tab below.');
       setIsScanning(false);
     }
@@ -105,6 +169,62 @@ export default function QRScannerModal({ isOpen, onClose }) {
       html5QrcodeRef.current = null;
     }
     setIsScanning(false);
+  };
+
+  const handleToggleCamera = async () => {
+    if (isSwitchingCamera) return;
+    setIsSwitchingCamera(true);
+    try {
+      await stopScanner();
+
+      // If we have recognized multiple devices in `cameras`:
+      if (cameras.length > 1) {
+        const currentIndex = cameras.findIndex(c => c.id === selectedCameraId);
+        const nextIndex = (currentIndex + 1) % cameras.length;
+        const nextDevice = cameras[nextIndex];
+        setSelectedCameraId(nextDevice.id);
+        const isBack = (nextDevice.label || '').toLowerCase().includes('back') || (nextDevice.label || '').toLowerCase().includes('rear');
+        setFacingMode(isBack ? 'environment' : 'user');
+        await startScanner(nextDevice.id);
+      } else {
+        // Toggle between environment (back) and user (front)
+        const nextMode = facingMode === 'environment' ? 'user' : 'environment';
+        setFacingMode(nextMode);
+        setSelectedCameraId(null);
+        await startScanner({ facingMode: nextMode });
+      }
+    } catch (err) {
+      console.error('Failed to switch camera:', err);
+    } finally {
+      setIsSwitchingCamera(false);
+    }
+  };
+
+  const handleSelectSpecificCamera = async (deviceId) => {
+    if (isSwitchingCamera || deviceId === selectedCameraId) return;
+    setIsSwitchingCamera(true);
+    try {
+      await stopScanner();
+      setSelectedCameraId(deviceId);
+      const cam = cameras.find(c => c.id === deviceId);
+      if (cam) {
+        const isBack = (cam.label || '').toLowerCase().includes('back') || (cam.label || '').toLowerCase().includes('rear');
+        setFacingMode(isBack ? 'environment' : 'user');
+      }
+      await startScanner(deviceId);
+    } catch (err) {
+      console.error('Failed to switch camera:', err);
+    } finally {
+      setIsSwitchingCamera(false);
+    }
+  };
+
+  const getCameraDisplayName = () => {
+    if (selectedCameraId && cameras.length > 0) {
+      const active = cameras.find(c => c.id === selectedCameraId);
+      if (active?.label) return active.label;
+    }
+    return facingMode === 'environment' ? 'Rear / Back Camera' : 'Front Camera';
   };
 
   const handleDecodedText = async (rawText) => {
@@ -215,7 +335,7 @@ export default function QRScannerModal({ isOpen, onClose }) {
         </div>
 
         {/* Content Body */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-4">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
           
           {/* Loading overlay while looking up QR code */}
           {loadingEq && (
@@ -287,19 +407,83 @@ export default function QRScannerModal({ isOpen, onClose }) {
                       </button>
                     </div>
                   ) : (
-                    <div className="relative rounded-2xl overflow-hidden border-2 border-dashed border-blue-300 bg-slate-900 min-h-[250px] flex items-center justify-center">
-                      <div id="qr-reader-container" className="w-full h-full" />
-                      {loadingEq && (
-                        <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center text-white gap-2">
-                          <div className="h-8 w-8 border-4 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                          <p className="text-xs font-semibold">Reading QR Code...</p>
+                    <div className="space-y-2.5">
+                      {/* Camera Bar / Quick Switcher */}
+                      <div className="flex items-center justify-between gap-2 p-2 bg-slate-100 rounded-xl border border-slate-200">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+                          <span className="text-xs font-bold text-slate-700 truncate">
+                            {getCameraDisplayName()}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleToggleCamera}
+                          disabled={isSwitchingCamera}
+                          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-white hover:bg-slate-50 text-blue-700 border border-slate-200 rounded-lg text-xs font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50 flex-shrink-0"
+                          title="Switch between front and back camera"
+                        >
+                          <SwitchCamera className={`h-3.5 w-3.5 text-blue-600 ${isSwitchingCamera ? 'animate-spin' : ''}`} />
+                          <span>Switch Camera</span>
+                        </button>
+                      </div>
+
+                      {/* Device dropdown if 3+ lenses detected */}
+                      {cameras.length > 2 && (
+                        <div className="flex items-center gap-2 px-1">
+                          <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider flex-shrink-0">Lens:</span>
+                          <select
+                            value={selectedCameraId || ''}
+                            onChange={(e) => handleSelectSpecificCamera(e.target.value)}
+                            className="flex-1 text-xs py-1 px-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium focus:ring-1 focus:ring-blue-500"
+                          >
+                            {cameras.map((c, i) => (
+                              <option key={c.id} value={c.id}>
+                                {c.label || `Camera ${i + 1}`}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       )}
+
+                      {/* Live Camera Viewfinder */}
+                      <div className="relative rounded-2xl overflow-hidden border-2 border-dashed border-blue-300 bg-slate-900 min-h-[260px] flex items-center justify-center">
+                        <div id="qr-reader-container" className="w-full h-full" />
+
+                        {/* Floating quick flip camera button */}
+                        <button
+                          type="button"
+                          onClick={handleToggleCamera}
+                          disabled={isSwitchingCamera}
+                          className="absolute top-3 right-3 z-20 h-9 w-9 rounded-full bg-slate-900/80 hover:bg-slate-900 text-white backdrop-blur flex items-center justify-center shadow-lg border border-white/20 active:scale-90 transition-all disabled:opacity-50"
+                          title="Switch Camera (Front / Back)"
+                          aria-label="Switch Camera"
+                        >
+                          <SwitchCamera className={`h-4 w-4 ${isSwitchingCamera ? 'animate-spin' : ''}`} />
+                        </button>
+
+                        {/* Scanning frame guide */}
+                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                          <div className="w-48 h-48 border-2 border-emerald-400/80 rounded-2xl relative shadow-[0_0_0_9999px_rgba(15,23,42,0.45)]">
+                            <span className="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-emerald-400" />
+                            <span className="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-emerald-400" />
+                            <span className="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-emerald-400" />
+                            <span className="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-emerald-400" />
+                          </div>
+                        </div>
+
+                        {loadingEq && (
+                          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center text-white gap-2 z-30">
+                            <div className="h-8 w-8 border-4 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                            <p className="text-xs font-semibold">Reading QR Code...</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 
                   <p className="text-[11px] text-slate-400 text-center">
-                    Point your camera directly at the QR sticker tag attached to the equipment.
+                    Point your camera directly at the QR sticker tag. Tap "Switch Camera" to toggle between back and front camera.
                   </p>
                 </div>
               ) : (
