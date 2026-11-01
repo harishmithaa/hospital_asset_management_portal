@@ -1,9 +1,12 @@
 require('dotenv').config();
 const app = require('./app');
+const syncCalibrationData = require('./utils/calibrationSync');
+
 const connectDB = async () => {
   try {
     const db = require('./config/db');
     await db();
+    await syncCalibrationData();
   } catch (error) {
     console.error(`Database connection issue: ${error.message}`);
   }

@@ -684,19 +684,19 @@ export default function Calibration() {
 
       const lastDate = latestCompleted?.calibrationDate || eq.lastCalibrationDate || null;
 
-      let status = 'Completed';
+      let status = 'Scheduled';
       if (overdueRecord || (nextDueDate && new Date(nextDueDate) < now)) {
         status = 'Overdue';
       } else if (pendingRecord || (nextDueDate && new Date(nextDueDate) <= oneWeekFromNow)) {
         status = 'Pending';
-      } else if (scheduledRecord && !latestCompleted) {
-        status = 'Scheduled';
-      } else if (latestCompleted) {
+      } else if (latestCompleted || (lastDate && eqRecords.some(r => r.status === 'Completed'))) {
         status = 'Completed';
       } else if (scheduledRecord) {
         status = 'Scheduled';
-      } else {
+      } else if (lastDate) {
         status = 'Completed';
+      } else {
+        status = 'Scheduled';
       }
 
       map[eq._id] = {
