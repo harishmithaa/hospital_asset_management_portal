@@ -67,6 +67,7 @@ export const maintenanceAPI = {
   delete: (id) => api.delete(`/maintenance/${id}`),
   updateChecklist: (id, checklistItems) => api.put(`/maintenance/${id}/checklist`, { checklistItems }),
   updateSpareParts: (id, spareParts) => api.put(`/maintenance/${id}/spare-parts`, { spareParts }),
+  getByComplaint: (complaintId) => api.post(`/maintenance/complaint/${complaintId}`),
 };
 
 // Complaints

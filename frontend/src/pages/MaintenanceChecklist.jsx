@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { maintenanceAPI } from '../services/api';
 import {
   ClipboardList, Package, CheckCircle2,
   XCircle, Minus, Clock, Plus, Trash2, Save, X, Wrench,
-  Search, Edit3
+  Search, Edit3, AlertCircle
 } from 'lucide-react';
 
 // ─── Status config for checklist items ────────────────────────────────────
@@ -209,19 +210,37 @@ function SparePartRow({ part, index, onChange, onRemove }) {
 // ─── Record Selector Modal ────────────────────────────────────────────────
 function RecordSelector({ records, onSelect, onClose }) {
   const [search, setSearch] = useState('');
-  const filtered = records.filter(r =>
-    r.equipment?.name?.toLowerCase().includes(search.toLowerCase()) ||
-    r.equipment?.equipmentId?.toLowerCase().includes(search.toLowerCase()) ||
-    r.type?.toLowerCase().includes(search.toLowerCase())
-  );
+  const [filterType, setFilterType] = useState('all'); // 'all', 'complaint', 'preventive'
+
+  const filtered = records.filter(r => {
+    const matchesSearch =
+      r.equipment?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      r.equipment?.equipmentId?.toLowerCase().includes(search.toLowerCase()) ||
+      r.type?.toLowerCase().includes(search.toLowerCase()) ||
+      r.complaint?.complaintId?.toLowerCase().includes(search.toLowerCase()) ||
+      r.complaint?.issueDescription?.toLowerCase().includes(search.toLowerCase()) ||
+      r.workDescription?.toLowerCase().includes(search.toLowerCase());
+
+    if (!matchesSearch) return false;
+    if (filterType === 'complaint') return !!r.complaint || r.type === 'Corrective';
+    if (filterType === 'preventive') return r.type === 'Preventive';
+    return true;
+  });
+
+  const complaintCount = records.filter(r => !!r.complaint || r.type === 'Corrective').length;
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl max-h-[80vh] flex flex-col">
+      <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl max-h-[85vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h3 className="font-bold text-slate-800">Select Maintenance Record</h3>
-          <button onClick={onClose}><X className="h-5 w-5 text-slate-400" /></button>
+          <div>
+            <h3 className="font-bold text-slate-800">Select Maintenance &amp; Complaint Record</h3>
+            <p className="text-xs text-slate-400">Choose a scheduled service or corrective complaint ticket</p>
+          </div>
+          <button onClick={onClose}><X className="h-5 w-5 text-slate-400 hover:text-slate-600" /></button>
         </div>
-        <div className="p-4 border-b border-slate-100">
+
+        <div className="p-4 border-b border-slate-100 space-y-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
@@ -230,29 +249,74 @@ function RecordSelector({ records, onSelect, onClose }) {
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400"
-              placeholder="Search by equipment or type..."
+              placeholder="Search by equipment, type, or complaint..."
             />
           </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setFilterType('all')}
+              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
+                filterType === 'all' ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              All ({records.length})
+            </button>
+            <button
+              onClick={() => setFilterType('complaint')}
+              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
+                filterType === 'complaint' ? 'bg-amber-600 text-white shadow-sm' : 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
+              }`}
+            >
+              Complaints &amp; Corrective ({complaintCount})
+            </button>
+            <button
+              onClick={() => setFilterType('preventive')}
+              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
+                filterType === 'preventive' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              Preventive
+            </button>
+          </div>
         </div>
+
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
           {filtered.length === 0 ? (
-            <p className="text-center text-slate-400 text-sm py-8">No records found</p>
+            <p className="text-center text-slate-400 text-sm py-8">No matching records found</p>
           ) : filtered.map(r => (
             <button
               key={r._id}
               onClick={() => onSelect(r)}
-              className="w-full text-left p-3 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 transition-all group"
+              className="w-full text-left p-3.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 transition-all group"
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-slate-800 group-hover:text-blue-700">
-                    {r.equipment?.name || 'Unknown Equipment'}
-                  </p>
+              <div className="flex items-start justify-between gap-2">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-slate-800 group-hover:text-blue-700">
+                      {r.equipment?.name || 'Unknown Equipment'}
+                    </p>
+                    {r.complaint ? (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                        {r.complaint.complaintId || 'Complaint'}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
+                        {r.type}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[11px] text-slate-400">
-                    {r.equipment?.equipmentId} &middot; {r.type} &middot; {new Date(r.scheduledDate).toLocaleDateString()}
+                    {r.equipment?.equipmentId} &middot; {new Date(r.scheduledDate).toLocaleDateString()}
+                    {r.engineer?.name && ` · Tech: ${r.engineer.name}`}
                   </p>
+                  {(r.complaint?.issueDescription || (r.type === 'Corrective' && r.workDescription)) && (
+                    <p className="text-xs text-amber-800 bg-amber-50/80 px-2 py-1 rounded-md mt-1 border border-amber-100 font-medium line-clamp-1">
+                      Issue: {r.complaint?.issueDescription || r.workDescription}
+                    </p>
+                  )}
                 </div>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
                   r.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' :
                   r.status === 'In Progress' ? 'bg-indigo-100 text-indigo-700' :
                   r.status === 'Overdue' ? 'bg-red-100 text-red-700' :
@@ -270,11 +334,15 @@ function RecordSelector({ records, onSelect, onClose }) {
 // ─── Main Component ───────────────────────────────────────────────────────
 export default function MaintenanceChecklist() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const complaintIdParam = searchParams.get('complaintId');
 
   const [records, setRecords] = useState([]);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [showSelector, setShowSelector] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [completing, setCompleting] = useState(false);
 
   // Checklist state
   const [checklist, setChecklist] = useState([]);
@@ -316,6 +384,57 @@ export default function MaintenanceChecklist() {
     setShowSelector(false);
     setActiveTab('checklist');
   }, []);
+
+  // Auto-load record if complaintId is present in URL
+  useEffect(() => {
+    if (complaintIdParam) {
+      setLoading(true);
+      maintenanceAPI.getByComplaint(complaintIdParam)
+        .then(res => {
+          if (res.data.success && res.data.maintenance) {
+            selectRecord(res.data.maintenance);
+          }
+        })
+        .catch(err => {
+          console.error('Error fetching complaint maintenance:', err);
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [complaintIdParam, selectRecord]);
+
+  const completeMaintenanceRecord = async () => {
+    if (!selectedRecord) return;
+    const isComplaint = !!selectedRecord.complaint;
+    const confirmMsg = isComplaint
+      ? `Complete corrective maintenance? This will resolve complaint ${selectedRecord.complaint.complaintId || ''} and return the equipment to Working status.`
+      : 'Mark this maintenance record as Completed and return equipment to Working status?';
+
+    if (!window.confirm(confirmMsg)) return;
+
+    setCompleting(true);
+    try {
+      const res = await maintenanceAPI.update(selectedRecord._id, {
+        status: 'Completed',
+        completedDate: new Date(),
+        nextServiceDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      });
+      if (res.data.success) {
+        alert(
+          isComplaint
+            ? `Maintenance completed! Complaint ${selectedRecord.complaint.complaintId || ''} is now Resolved and equipment is back to Working.`
+            : 'Maintenance marked as Completed! Equipment returned to Working status.'
+        );
+        await loadRecords();
+        if (res.data.maintenance) {
+          selectRecord(res.data.maintenance);
+        }
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to complete maintenance');
+    } finally {
+      setCompleting(false);
+    }
+  };
 
   const applyTemplate = () => {
     const tmpl = DEFAULT_CHECKLIST_TEMPLATES[selectedRecord?.type] || DEFAULT_CHECKLIST_TEMPLATES.Preventive;
@@ -436,13 +555,50 @@ export default function MaintenanceChecklist() {
       {/* Selected record view */}
       {selectedRecord && (
         <>
+          {/* Linked Complaint Alert Banner */}
+          {selectedRecord.complaint && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start justify-between gap-4 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-amber-100 rounded-lg text-amber-700 flex-shrink-0 mt-0.5">
+                  <AlertCircle className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-amber-900">
+                      Breakdown Complaint Ticket: {selectedRecord.complaint.complaintId || 'Complaint'}
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900">
+                      {selectedRecord.complaint.priority || 'Medium'} Priority
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-800 font-medium mt-1">
+                    {selectedRecord.complaint.issueDescription || selectedRecord.workDescription}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => navigate('/complaints')}
+                className="text-xs font-bold text-amber-800 hover:text-amber-900 bg-amber-100/70 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-colors flex-shrink-0"
+              >
+                View in Complaints &rarr;
+              </button>
+            </div>
+          )}
+
           {/* Record Header Card */}
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-5 text-white">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-blue-100 text-xs font-medium uppercase tracking-wider mb-1">
-                  {selectedRecord.type} Maintenance
-                </p>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-blue-100 text-xs font-medium uppercase tracking-wider">
+                    {selectedRecord.type} Maintenance
+                  </p>
+                  {selectedRecord.complaint && (
+                    <span className="bg-amber-400 text-slate-900 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                      Complaint Linked
+                    </span>
+                  )}
+                </div>
                 <h2 className="text-xl font-bold">{selectedRecord.equipment?.name}</h2>
                 <p className="text-blue-100 text-sm mt-0.5">
                   {selectedRecord.equipment?.equipmentId} &nbsp;&middot;&nbsp;
@@ -450,12 +606,25 @@ export default function MaintenanceChecklist() {
                   {selectedRecord.engineer && ` · Technician: ${selectedRecord.engineer.name}`}
                 </p>
               </div>
-              <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${
-                selectedRecord.status === 'Completed' ? 'bg-emerald-500/30 text-emerald-100' :
-                selectedRecord.status === 'In Progress' ? 'bg-white/20 text-white' :
-                selectedRecord.status === 'Overdue' ? 'bg-red-500/30 text-red-100' :
-                'bg-white/20 text-white'
-              }`}>{selectedRecord.status}</span>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${
+                  selectedRecord.status === 'Completed' ? 'bg-emerald-500/30 text-emerald-100' :
+                  selectedRecord.status === 'In Progress' ? 'bg-white/20 text-white' :
+                  selectedRecord.status === 'Overdue' ? 'bg-red-500/30 text-red-100' :
+                  'bg-white/20 text-white'
+                }`}>{selectedRecord.status}</span>
+                {selectedRecord.status !== 'Completed' && (
+                  <button
+                    onClick={completeMaintenanceRecord}
+                    disabled={completing}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-white rounded-lg text-xs font-bold transition-all shadow-sm disabled:opacity-50"
+                    title={selectedRecord.complaint ? 'Resolve complaint and mark completed' : 'Mark maintenance as completed'}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <span>{completing ? 'Completing...' : selectedRecord.complaint ? 'Resolve & Complete' : 'Complete'}</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-4 gap-3 mt-4">

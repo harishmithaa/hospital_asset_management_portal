@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { complaintAPI, authAPI } from '../services/api';
-import { AlertCircle, X, ChevronRight } from 'lucide-react';
+import { AlertCircle, X, ChevronRight, ClipboardList } from 'lucide-react';
 
 const statusColors = {
   'Open':        'bg-blue-100 text-blue-700',
@@ -23,6 +23,7 @@ const Badge = ({ label, color }) => <span className={`text-[10px] font-semibold 
 // ─── Assign Engineer / Update Complaint Modal ─────────────────────────────
 function UpdateModal({ complaint, engineers, onClose, onSaved }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isAdmin = user?.role === 'Admin';
   const isEngineer = user?.role === 'Technician' || user?.role === 'Biomedical Engineer';
 
@@ -84,7 +85,24 @@ function UpdateModal({ complaint, engineers, onClose, onSaved }) {
             <label className="block text-xs font-semibold text-slate-600 mb-1.5">Note (optional)</label>
             <textarea value={form.note} onChange={e => setForm(f=>({...f, note: e.target.value}))} className="input-field resize-none" rows={2} placeholder="Add a progress note..." />
           </div>
-          <div className="flex gap-3">
+
+          {(isAdmin || isEngineer) && (
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  navigate(`/checklist?complaintId=${complaint._id}`);
+                }}
+                className="w-full py-2.5 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors shadow-sm"
+              >
+                <ClipboardList className="h-4 w-4 text-blue-600" />
+                <span>Open Service Checklist & Spare Parts Log</span>
+              </button>
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
             <button type="submit" disabled={saving} className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 disabled:opacity-50">{saving ? 'Updating...' : 'Update'}</button>
           </div>
@@ -210,9 +228,26 @@ export default function Complaints() {
                     <td className="py-3 px-4 text-xs text-slate-600 hidden lg:table-cell">{c.assignedEngineer?.name || '—'}</td>
                     <td className="py-3 px-4 text-xs text-slate-400 hidden lg:table-cell">{new Date(c.createdAt).toLocaleDateString()}</td>
                     <td className="py-3 px-4">
-                      {(isAdmin || isEngineer) && !['Completed','Closed','Cancelled'].includes(c.status) && (
-                        <button onClick={() => setShowUpdate(c)} className="text-xs text-blue-600 font-semibold hover:underline opacity-0 group-hover:opacity-100 transition-all">Update</button>
-                      )}
+                      <div className="flex items-center gap-2 justify-end">
+                        {(isAdmin || isEngineer) && (
+                          <button
+                            onClick={() => navigate(`/checklist?complaintId=${c._id}`)}
+                            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200"
+                            title="Open Service Checklist & Spare Parts"
+                          >
+                            <ClipboardList className="h-3.5 w-3.5 text-blue-600" />
+                            <span>Checklist & Parts</span>
+                          </button>
+                        )}
+                        {(isAdmin || isEngineer) && !['Completed','Closed','Cancelled'].includes(c.status) && (
+                          <button
+                            onClick={() => setShowUpdate(c)}
+                            className="px-2 py-1 text-xs text-slate-600 hover:text-slate-900 font-semibold hover:bg-slate-100 rounded-lg transition-colors"
+                          >
+                            Update
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

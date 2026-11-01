@@ -190,14 +190,68 @@ const seedData = async () => {
     }
     console.log(`Seeded ${createdEquipment.length} equipment items.`);
 
-    // ─── 5. Maintenance Records ────────────────────────────────────────────────
-    console.log('Seeding Maintenance records...');
+    // ─── 5. Complaints ─────────────────────────────────────────────────────────
+    console.log('Seeding Complaints...');
 
     const ecgMachine = createdEquipment[0];    // ECG Machine (Scheduled Today)
     const patientMonitor = createdEquipment[1]; // Patient Monitor (Completed with checklist)
     const ventilator = createdEquipment[3];    // Ventilator (Overdue 1 day)
     const mriScanner = createdEquipment[6];    // MRI Scanner (Completed with spare parts)
     const infusionPump = createdEquipment[8];  // Infusion Pump (Scheduled Tomorrow)
+
+    const complaint1 = new Complaint({
+      equipment: ecgMachine._id,
+      department: departments[4]._id, // Cardiology
+      raisedBy: staffUser._id,
+      issueDescription: 'ECG trace showing intermittent lead artifact on chest leads V1-V3.',
+      priority: 'High',
+      status: 'Assigned',
+      assignedEngineer: engineerUser._id,
+      additionalNotes: 'Occurs primarily when patient moves slightly.',
+      updates: [
+        { status: 'Open', note: 'Complaint raised by ward nurse.', updatedBy: staffUser._id, timestamp: daysAgo(1) },
+        { status: 'Assigned', note: 'Assigned to Tech. James Wilson for lead continuity inspection.', updatedBy: adminUser._id, timestamp: daysAgo(1) }
+      ]
+    });
+    await complaint1.save();
+
+    const complaint2 = new Complaint({
+      equipment: patientMonitor._id,
+      department: departments[4]._id,
+      raisedBy: staffUser._id,
+      issueDescription: 'NIBP cuff taking longer than usual to inflate during routine interval readings.',
+      priority: 'Medium',
+      status: 'In Progress',
+      assignedEngineer: engineerUser._id,
+      updates: [
+        { status: 'Open', note: 'Complaint submitted.', updatedBy: staffUser._id, timestamp: daysAgo(2) },
+        { status: 'Assigned', note: 'Assigned to engineer.', updatedBy: adminUser._id, timestamp: daysAgo(2) },
+        { status: 'In Progress', note: 'Technician checking pneumatic valve and tubing connector seal.', updatedBy: engineerUser._id, timestamp: daysAgo(1) }
+      ]
+    });
+    await complaint2.save();
+
+    const complaint3 = new Complaint({
+      equipment: ventilator._id,
+      department: departments[0]._id, // Emergency
+      raisedBy: adminUser._id,
+      issueDescription: 'Ventilator touch screen calibration slightly misaligned on right edge.',
+      priority: 'Low',
+      status: 'Completed',
+      assignedEngineer: engineerUser._id,
+      updates: [
+        { status: 'Open', note: 'Complaint reported.', updatedBy: adminUser._id, timestamp: daysAgo(5) },
+        { status: 'Assigned', note: 'Assigned.', updatedBy: adminUser._id, timestamp: daysAgo(5) },
+        { status: 'In Progress', note: 'Touch digitizer re-calibrated via service mode.', updatedBy: engineerUser._id, timestamp: daysAgo(4) },
+        { status: 'Completed', note: 'Screen response verified and sanitized.', updatedBy: engineerUser._id, timestamp: daysAgo(3) }
+      ]
+    });
+    await complaint3.save();
+
+    console.log('Seeded 3 complaints.');
+
+    // ─── 6. Maintenance Records ────────────────────────────────────────────────
+    console.log('Seeding Maintenance records...');
 
     const maintenanceRecords = [
       {
@@ -214,6 +268,37 @@ const seedData = async () => {
           { label: 'Visual casing & connector inspection', status: 'Pending', notes: '' },
           { label: '12-lead cable continuity test', status: 'Pending', notes: '' },
           { label: 'Thermal printer test print', status: 'Pending', notes: '' }
+        ]
+      },
+      // Corrective Maintenance directly linked to Complaint 2!
+      {
+        equipment: patientMonitor._id,
+        complaint: complaint2._id,
+        type: 'Corrective',
+        scheduledDate: daysAgo(1),
+        engineer: engineerUser._id,
+        status: 'In Progress',
+        workDescription: 'Corrective service for CP-2026-00002: NIBP cuff slow inflation. Pneumatic seal replacement and pressure calibration.',
+        cost: 650,
+        checklistItems: [
+          { label: 'Identify fault & root cause', status: 'Pass', notes: 'Micro-leak detected at quick-connect cuff connector' },
+          { label: 'Inspect pneumatic pump & valves', status: 'Pass', notes: 'Internal pump pressure steady at 300 mmHg' },
+          { label: 'Replace faulty pneumatic parts', status: 'Pass', notes: 'Fitted replacement quick-release O-ring seal' },
+          { label: 'NIBP pressure accuracy test (±3 mmHg)', status: 'Pending', notes: 'Verification test underway with manometer' },
+          { label: 'Overpressure safety valve relief test', status: 'Pending', notes: '' },
+          { label: 'Final operational checkout & handover', status: 'Pending', notes: '' }
+        ],
+        spareParts: [
+          {
+            partName: 'NIBP Hose Connector O-Ring & Barb',
+            partNumber: 'MR-NIBP-OR1',
+            quantity: 2,
+            unitCost: 325,
+            totalPrice: 650,
+            suppliedBy: 'Mindray Healthcare',
+            replacementDate: daysAgo(1),
+            notes: 'Replaced worn pneumatic seal to restore rapid cuff inflation'
+          }
         ]
       },
       {
@@ -308,60 +393,6 @@ const seedData = async () => {
 
     await Maintenance.insertMany(maintenanceRecords);
     console.log(`Seeded ${maintenanceRecords.length} maintenance records.`);
-
-    // ─── 6. Complaints ─────────────────────────────────────────────────────────
-    console.log('Seeding Complaints...');
-
-    const complaint1 = new Complaint({
-      equipment: ecgMachine._id,
-      department: departments[4]._id, // Cardiology
-      raisedBy: staffUser._id,
-      issueDescription: 'ECG trace showing intermittent lead artifact on chest leads V1-V3.',
-      priority: 'High',
-      status: 'Assigned',
-      assignedEngineer: engineerUser._id,
-      additionalNotes: 'Occurs primarily when patient moves slightly.',
-      updates: [
-        { status: 'Open', note: 'Complaint raised by ward nurse.', updatedBy: staffUser._id, timestamp: daysAgo(1) },
-        { status: 'Assigned', note: 'Assigned to Tech. James Wilson for lead continuity inspection.', updatedBy: adminUser._id, timestamp: daysAgo(1) }
-      ]
-    });
-    await complaint1.save();
-
-    const complaint2 = new Complaint({
-      equipment: patientMonitor._id,
-      department: departments[4]._id,
-      raisedBy: staffUser._id,
-      issueDescription: 'NIBP cuff taking longer than usual to inflate during routine interval readings.',
-      priority: 'Medium',
-      status: 'In Progress',
-      assignedEngineer: engineerUser._id,
-      updates: [
-        { status: 'Open', note: 'Complaint submitted.', updatedBy: staffUser._id, timestamp: daysAgo(2) },
-        { status: 'Assigned', note: 'Assigned to engineer.', updatedBy: adminUser._id, timestamp: daysAgo(2) },
-        { status: 'In Progress', note: 'Technician checking pneumatic valve and tubing connector seal.', updatedBy: engineerUser._id, timestamp: daysAgo(1) }
-      ]
-    });
-    await complaint2.save();
-
-    const complaint3 = new Complaint({
-      equipment: ventilator._id,
-      department: departments[0]._id, // Emergency
-      raisedBy: adminUser._id,
-      issueDescription: 'Ventilator touch screen calibration slightly misaligned on right edge.',
-      priority: 'Low',
-      status: 'Completed',
-      assignedEngineer: engineerUser._id,
-      updates: [
-        { status: 'Open', note: 'Complaint reported.', updatedBy: adminUser._id, timestamp: daysAgo(5) },
-        { status: 'Assigned', note: 'Assigned.', updatedBy: adminUser._id, timestamp: daysAgo(5) },
-        { status: 'In Progress', note: 'Touch digitizer re-calibrated via service mode.', updatedBy: engineerUser._id, timestamp: daysAgo(4) },
-        { status: 'Completed', note: 'Screen response verified and sanitized.', updatedBy: engineerUser._id, timestamp: daysAgo(3) }
-      ]
-    });
-    await complaint3.save();
-
-    console.log('Seeded 3 complaints.');
 
     // ─── 7. Calibration ────────────────────────────────────────────────────────
     console.log('Seeding Calibrations...');

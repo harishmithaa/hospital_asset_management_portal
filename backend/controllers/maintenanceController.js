@@ -3,6 +3,7 @@ const Equipment = require('../models/Equipment');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const Vendor = require('../models/Vendor');
+const Complaint = require('../models/Complaint');
 
 // @desc    Get all maintenance tasks
 // @route   GET /api/maintenance
@@ -18,9 +19,9 @@ exports.getMaintenance = async (req, res) => {
     if (engineer) query.engineer = engineer;
     if (equipment) query.equipment = equipment;
 
-    // Role-based restrictions
+    // Role-based restrictions: Technician sees assigned tasks OR unassigned tasks
     if (req.user.role === 'Technician') {
-      query.engineer = req.user.id;
+      query.$or = [{ engineer: req.user.id }, { engineer: null }];
     }
 
     // Bug #3 Fix: Vendor should only see maintenance for their supplied equipment
@@ -209,11 +210,35 @@ exports.updateMaintenance = async (req, res) => {
           category: 'Success'
         });
       }
+
+      // If this maintenance was for a complaint, automatically mark the complaint as Completed
+      if (record.complaint) {
+        const comp = await Complaint.findById(record.complaint);
+        if (comp && !['Completed', 'Closed'].includes(comp.status)) {
+          comp.status = 'Completed';
+          comp.updates.push({
+            status: 'Completed',
+            note: 'Corrective maintenance checklist completed and spare parts logged by technician.',
+            updatedBy: req.user._id
+          });
+          await comp.save();
+
+          if (comp.raisedBy) {
+            await Notification.create({
+              user: comp.raisedBy,
+              title: 'Complaint Resolved',
+              message: `Your complaint ${comp.complaintId} has been resolved. Maintenance checklist completed and verified.`,
+              category: 'Success'
+            });
+          }
+        }
+      }
     }
 
     const populated = await Maintenance.findById(record._id)
       .populate('equipment', 'name equipmentId currentStatus')
       .populate('engineer', 'name email phone')
+      .populate('complaint', 'complaintId issueDescription priority')
       .populate('vendor', 'companyName');
 
     res.json({ success: true, maintenance: populated });
@@ -285,6 +310,80 @@ exports.updateSpareParts = async (req, res) => {
     const partsTotal = spareParts.reduce((sum, p) => sum + (p.unitCost || 0) * (p.quantity || 1), 0);
     if (partsTotal > 0) record.cost = partsTotal;
     await record.save();
+    res.json({ success: true, maintenance: record });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get or create corrective maintenance record for a complaint
+// @route   POST /api/maintenance/complaint/:complaintId
+// @access  Private
+exports.getOrCreateComplaintMaintenance = async (req, res) => {
+  try {
+    const { complaintId } = req.params;
+
+    // Support MongoDB _id or string complaintId (e.g. CP-2026-00001)
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(complaintId);
+    const complaint = await Complaint.findOne(
+      isObjectId ? { _id: complaintId } : { complaintId }
+    ).populate('equipment', 'name equipmentId currentStatus department')
+     .populate('assignedEngineer', 'name email');
+
+    if (!complaint) {
+      return res.status(404).json({ success: false, message: 'Complaint not found' });
+    }
+
+    // Look for existing Maintenance linked to this complaint
+    let record = await Maintenance.findOne({ complaint: complaint._id })
+      .populate('equipment', 'name equipmentId currentStatus department room')
+      .populate('engineer', 'name email')
+      .populate('complaint', 'complaintId issueDescription priority status');
+
+    if (!record) {
+      const defaultCorrectiveItems = [
+        { label: 'Identify fault & root cause', status: 'Pending', notes: complaint.issueDescription || '' },
+        { label: 'Inspect relevant components & cabling', status: 'Pending', notes: '' },
+        { label: 'Replace faulty parts (if required)', status: 'Pending', notes: '' },
+        { label: 'Test repaired functionality & calibration', status: 'Pending', notes: '' },
+        { label: 'Verify electrical safety & grounding', status: 'Pending', notes: '' },
+        { label: 'Final operational checkout & handover', status: 'Pending', notes: '' }
+      ];
+
+      const assignedEng = complaint.assignedEngineer?._id || (req.user.role === 'Technician' ? req.user.id : null);
+
+      record = await Maintenance.create({
+        equipment: complaint.equipment._id || complaint.equipment,
+        type: 'Corrective',
+        scheduledDate: new Date(),
+        status: 'In Progress',
+        engineer: assignedEng,
+        complaint: complaint._id,
+        workDescription: `Corrective service for complaint ${complaint.complaintId}: ${complaint.issueDescription}`,
+        checklistItems: defaultCorrectiveItems,
+        cost: 0
+      });
+
+      // Update complaint status if it was Open or Assigned
+      if (['Open', 'Assigned'].includes(complaint.status)) {
+        complaint.status = 'In Progress';
+        if (!complaint.assignedEngineer && assignedEng) {
+          complaint.assignedEngineer = assignedEng;
+        }
+        complaint.updates.push({
+          status: 'In Progress',
+          note: 'Technician launched digital checklist for corrective repair.',
+          updatedBy: req.user._id
+        });
+        await complaint.save();
+      }
+
+      record = await Maintenance.findById(record._id)
+        .populate('equipment', 'name equipmentId currentStatus department room')
+        .populate('engineer', 'name email')
+        .populate('complaint', 'complaintId issueDescription priority status');
+    }
+
     res.json({ success: true, maintenance: record });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

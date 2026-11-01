@@ -7,7 +7,8 @@ const {
   updateMaintenance, 
   deleteMaintenance,
   updateChecklist,
-  updateSpareParts
+  updateSpareParts,
+  getOrCreateComplaintMaintenance
 } = require('../controllers/maintenanceController');
 const { protect, authorize } = require('../middleware/auth');
 const upload = require('../middleware/upload');
@@ -21,6 +22,11 @@ const multiUpload = upload.fields([
 router.route('/')
   .get(protect, getMaintenance)
   .post(protect, multiUpload, createMaintenance);
+
+// Complaint integration: get or auto-create corrective maintenance checklist for a complaint
+router.route('/complaint/:complaintId')
+  .get(protect, getOrCreateComplaintMaintenance)
+  .post(protect, getOrCreateComplaintMaintenance);
 
 router.route('/:id')
   .get(protect, getMaintenanceById)
