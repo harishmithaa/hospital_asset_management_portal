@@ -90,22 +90,47 @@ export default function ServiceRequests() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-bold text-slate-800">{r.equipment?.name}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-bold text-slate-800">{r.equipment?.name}</p>
+                        {r.vendorServiceStatus && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+                            {r.vendorServiceStatus}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-[11px] text-slate-400 font-mono">{r.equipment?.equipmentId}</p>
                     </div>
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusColors[r.status] || 'bg-slate-100 text-slate-600'}`}>{r.status}</span>
                   </div>
+
                   <div className="mt-2 flex gap-4 flex-wrap text-xs text-slate-500">
                     <span>Type: <span className="font-medium text-slate-700">{r.type}</span></span>
                     <span>Scheduled: <span className="font-medium text-slate-700">{new Date(r.scheduledDate).toLocaleDateString()}</span></span>
+                    {r.vendorArrivalDate && (
+                      <span className="text-indigo-600 font-medium">
+                        Arrival Date: <span className="font-bold">{new Date(r.vendorArrivalDate).toLocaleDateString()}</span>
+                      </span>
+                    )}
                     {r.cost > 0 && <span>Cost: <span className="font-medium text-slate-700">₹{r.cost.toLocaleString()}</span></span>}
                   </div>
-                  {r.workDescription && (
+
+                  {r.vendorDispatchNotes && (
+                    <div className="mt-2.5 p-2.5 bg-purple-50/80 border border-purple-200 rounded-lg text-xs text-purple-900">
+                      <p className="font-semibold text-[11px] text-purple-800 mb-0.5">Technician Issue Notes & Requisition:</p>
+                      <p>{r.vendorDispatchNotes}</p>
+                    </div>
+                  )}
+
+                  {r.workDescription && !r.vendorDispatchNotes && (
                     <p className="text-xs text-slate-500 mt-1.5 line-clamp-2">{r.workDescription}</p>
                   )}
-                  <div className="mt-2">
+
+                  <div className="mt-3 flex items-center gap-3">
                     <button onClick={() => navigate(`/equipment/${r.equipment?._id}`)} className="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1">
                       View Equipment <ChevronRight className="h-3 w-3" />
+                    </button>
+                    <button onClick={() => navigate('/service-reports')} className="text-xs text-slate-500 hover:text-slate-800 font-medium ml-auto">
+                      Submit Service Report →
                     </button>
                   </div>
                 </div>

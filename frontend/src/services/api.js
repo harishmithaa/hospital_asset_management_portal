@@ -76,6 +76,8 @@ export const complaintAPI = {
   getById: (id) => api.get(`/complaints/${id}`),
   create: (formData) => api.post('/complaints', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   update: (id, data) => api.put(`/complaints/${id}`, data),
+  passToVendor: (id, data) => api.put(`/complaints/${id}/pass-to-vendor`, data),
+  updateVendorArrival: (id, data) => api.put(`/complaints/${id}/vendor-arrival`, data),
   delete: (id) => api.delete(`/complaints/${id}`),
 };
 

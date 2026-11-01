@@ -24,13 +24,12 @@ exports.getMaintenance = async (req, res) => {
       query.$or = [{ engineer: req.user.id }, { engineer: null }];
     }
 
-    // Bug #3 Fix: Vendor should only see maintenance for their supplied equipment
+    // Vendor should only see service requests assigned / passed to their company
     if (req.user.role === 'Vendor') {
       const vendorUser = await User.findById(req.user.id);
       const vendorRecord = await Vendor.findOne({ email: vendorUser.email });
       if (vendorRecord) {
-        const vendorEquips = await Equipment.find({ supplierVendor: vendorRecord._id }).select('_id');
-        query.equipment = { $in: vendorEquips.map(e => e._id) };
+        query.vendor = vendorRecord._id;
       } else {
         return res.json({ success: true, count: 0, maintenance: [] });
       }
@@ -158,6 +157,10 @@ exports.updateMaintenance = async (req, res) => {
       reportPath,
       engineer,
       vendor,
+      vendorArrivalDate,
+      vendorDispatchNotes,
+      vendorServiceStatus,
+      passedToVendor,
       checklistItems,
       spareParts
     } = req.body;
@@ -171,6 +174,25 @@ exports.updateMaintenance = async (req, res) => {
     if (nextServiceDate !== undefined) record.nextServiceDate = nextServiceDate;
     if (engineer !== undefined) record.engineer = engineer || null;
     if (vendor !== undefined) record.vendor = vendor || null;
+    if (passedToVendor !== undefined) record.passedToVendor = passedToVendor;
+    if (vendorArrivalDate !== undefined) record.vendorArrivalDate = vendorArrivalDate ? new Date(vendorArrivalDate) : null;
+    if (vendorDispatchNotes !== undefined) record.vendorDispatchNotes = vendorDispatchNotes;
+    if (vendorServiceStatus) record.vendorServiceStatus = vendorServiceStatus;
+
+    // Sync to linked Complaint if present
+    if (record.complaint && (vendorArrivalDate !== undefined || vendorServiceStatus)) {
+      try {
+        const comp = await Complaint.findById(record.complaint);
+        if (comp) {
+          if (vendorArrivalDate !== undefined) comp.vendorArrivalDate = vendorArrivalDate ? new Date(vendorArrivalDate) : null;
+          if (vendorServiceStatus) comp.vendorServiceStatus = vendorServiceStatus;
+          await comp.save();
+        }
+      } catch (e) {
+        console.warn('Failed to sync vendor arrival to complaint:', e);
+      }
+    }
+
     // Accept JSON arrays for structured checklist and spare parts
     if (checklistItems !== undefined) {
       try { record.checklistItems = typeof checklistItems === 'string' ? JSON.parse(checklistItems) : checklistItems; } catch (e) {}

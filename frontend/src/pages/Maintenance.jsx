@@ -98,6 +98,7 @@ function UpdateModal({ record, onClose, onSaved }) {
   const [form, setForm] = useState({
     status: record.status,
     completedDate: new Date().toISOString().slice(0,10),
+    vendorArrivalDate: record.vendorArrivalDate ? record.vendorArrivalDate.slice(0,10) : '',
     workDescription: record.workDescription || '',
     partsReplaced: record.partsReplaced || '',
     cost: record.cost || '',
@@ -127,6 +128,24 @@ function UpdateModal({ record, onClose, onSaved }) {
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <p className="text-xs text-slate-500">Equipment: <strong>{record.equipment?.name}</strong></p>
+
+          {record.vendor && (
+            <div className="p-3 bg-purple-50/70 border border-purple-200 rounded-xl space-y-2">
+              <p className="text-xs font-bold text-purple-900">
+                Assigned Vendor: {record.vendor.companyName}
+              </p>
+              <div>
+                <label className="block text-[11px] font-semibold text-purple-800 mb-1">Vendor Arrival Date</label>
+                <input
+                  type="date"
+                  value={form.vendorArrivalDate}
+                  onChange={e => setForm(f => ({ ...f, vendorArrivalDate: e.target.value }))}
+                  className="input-field bg-white"
+                />
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1.5">Status</label>
             <select value={form.status} onChange={e => setForm(f=>({...f, status: e.target.value}))} className="input-field">

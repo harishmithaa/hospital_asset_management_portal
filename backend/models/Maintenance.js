@@ -33,6 +33,24 @@ const MaintenanceSchema = new mongoose.Schema({
     ref: 'Vendor',
     default: null
   },
+  passedToVendor: {
+    type: Boolean,
+    default: false
+  },
+  vendorArrivalDate: {
+    type: Date,
+    default: null
+  },
+  vendorDispatchNotes: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  vendorServiceStatus: {
+    type: String,
+    enum: ['Not Dispatched', 'Dispatched to Vendor', 'Vendor Visit Scheduled', 'Vendor Arrived', 'Completed'],
+    default: 'Not Dispatched'
+  },
   // Linked complaint (for corrective maintenance)
   complaint: {
     type: mongoose.Schema.Types.ObjectId,

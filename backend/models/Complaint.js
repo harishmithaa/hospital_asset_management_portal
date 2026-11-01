@@ -40,13 +40,41 @@ const ComplaintSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Open', 'Assigned', 'Accepted', 'In Progress', 'Waiting for Parts', 'Completed', 'Closed', 'Cancelled'],
+    enum: ['Open', 'Assigned', 'Accepted', 'In Progress', 'Waiting for Parts', 'Waiting for Vendor', 'Completed', 'Closed', 'Cancelled'],
     default: 'Open'
   },
   assignedEngineer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     default: null
+  },
+  // Vendor escalation & arrival tracking
+  passedToVendor: {
+    type: Boolean,
+    default: false
+  },
+  assignedVendor: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Vendor',
+    default: null
+  },
+  vendorDispatchDate: {
+    type: Date,
+    default: null
+  },
+  vendorDispatchNotes: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  vendorArrivalDate: {
+    type: Date,
+    default: null
+  },
+  vendorServiceStatus: {
+    type: String,
+    enum: ['Not Dispatched', 'Dispatched to Vendor', 'Vendor Visit Scheduled', 'Vendor Arrived', 'Resolved by Vendor'],
+    default: 'Not Dispatched'
   },
   updates: [
     {
