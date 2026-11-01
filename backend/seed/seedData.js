@@ -397,49 +397,188 @@ const seedData = async () => {
     // ─── 7. Calibration ────────────────────────────────────────────────────────
     console.log('Seeding Calibrations...');
 
+    const defibrillator = createdEquipment[2];
+    const anesthesiaMachine = createdEquipment[5];
+    const bloodGasAnalyzer = createdEquipment[7];
+
     await Calibration.insertMany([
+      // 1. ECG Machine - Completed test + Next test due in 3 days (turns Pending because <= 1 week!)
       {
         equipment: ecgMachine._id,
         calibrationDate: daysAgo(90),
-        dueDate: daysFromNow(3), // Due in 3 days!
+        dueDate: daysFromNow(3),
         engineer: engineerUser._id,
         result: 'Pass',
-        observations: 'All leads within ±1.5% tolerance. Ready for periodic recalibration.',
+        observations: 'All 12 leads tested with Fluke ProSim 8. Certified compliant.',
         status: 'Completed',
         certificateUpload: '/uploads/calibration_cert_ecg.pdf'
       },
       {
-        equipment: infusionPump._id,
-        calibrationDate: daysAgo(180),
-        dueDate: daysFromNow(1), // Due Tomorrow!
+        equipment: ecgMachine._id,
+        calibrationDate: daysAgo(90),
+        dueDate: daysFromNow(3), // Due in 3 days (within 1 week!) -> Pending
         engineer: engineerUser._id,
         result: 'Pass',
-        observations: 'Annual flow delivery calibration due tomorrow.',
+        observations: 'Periodic 90-day recalibration due in 3 days. Ready for technician precision test.',
         status: 'Pending',
         certificateUpload: ''
+      },
+
+      // 2. Infusion Pump - Completed test + Next test due tomorrow (Pending because <= 1 week!)
+      {
+        equipment: infusionPump._id,
+        calibrationDate: daysAgo(180),
+        dueDate: daysFromNow(1),
+        engineer: engineerUser._id,
+        result: 'Pass',
+        observations: 'Volumetric accuracy tested at 10, 50, and 100 mL/h with IDA-4 Plus.',
+        status: 'Completed',
+        certificateUpload: '/uploads/calibration_cert_infusion.pdf'
+      },
+      {
+        equipment: infusionPump._id,
+        calibrationDate: daysAgo(180),
+        dueDate: daysFromNow(1), // Due Tomorrow (within 1 week!) -> Pending
+        engineer: engineerUser._id,
+        result: 'Pass',
+        observations: 'Annual flow delivery recalibration due tomorrow. Verification test required.',
+        status: 'Pending',
+        certificateUpload: ''
+      },
+
+      // 3. Ventilator - Completed test + Next test overdue 1 day -> Overdue
+      {
+        equipment: ventilator._id,
+        calibrationDate: daysAgo(185),
+        dueDate: daysAgo(1),
+        engineer: engineerUser._id,
+        result: 'Pass',
+        observations: 'Inspiratory/expiratory flow sensor and volume accuracy certified.',
+        status: 'Completed',
+        certificateUpload: '/uploads/calibration_cert_ventilator.pdf'
       },
       {
         equipment: ventilator._id,
         calibrationDate: daysAgo(185),
-        dueDate: daysAgo(1), // Overdue 1 day
+        dueDate: daysAgo(1), // Overdue 1 day -> Overdue
         engineer: engineerUser._id,
         result: 'Pass',
-        observations: 'Flow sensor calibrated. 1 day overdue for renewal.',
+        observations: 'Calibration lapsed 1 day ago. Recalibration and certificate upload required.',
         status: 'Overdue',
         certificateUpload: ''
       },
+
+      // 4. MRI Scanner - Completed test + Next test scheduled in 60 days
       {
         equipment: mriScanner._id,
         calibrationDate: daysAgo(30),
         dueDate: daysFromNow(60),
         engineer: engineerUser._id,
         result: 'Pass',
-        observations: 'Magnetic field homogeneity certified within spec.',
+        observations: 'Magnetic field homogeneity certified within 0.5 ppm. RF transmit coil SNR verified.',
         status: 'Completed',
         certificateUpload: '/uploads/calibration_cert_mri.pdf'
+      },
+      {
+        equipment: mriScanner._id,
+        calibrationDate: daysAgo(30),
+        dueDate: daysFromNow(60), // Next cycle in 60 days (> 1 week) -> Scheduled
+        engineer: engineerUser._id,
+        result: 'Pass',
+        observations: 'Next scheduled periodic RF calibration and phantom verification.',
+        status: 'Scheduled',
+        certificateUpload: ''
+      },
+
+      // 5. Patient Monitor - Completed test + Next test scheduled in 120 days
+      {
+        equipment: patientMonitor._id,
+        calibrationDate: daysAgo(60),
+        dueDate: daysFromNow(120),
+        engineer: engineerUser._id,
+        result: 'Pass',
+        observations: 'NIBP pressure transducer calibrated to ±2 mmHg. SpO2 simulator verification passed.',
+        status: 'Completed',
+        certificateUpload: '/uploads/calibration_cert_patient_monitor.pdf'
+      },
+      {
+        equipment: patientMonitor._id,
+        calibrationDate: daysAgo(60),
+        dueDate: daysFromNow(120),
+        engineer: engineerUser._id,
+        result: 'Pass',
+        observations: 'Next scheduled semi-annual monitor calibration.',
+        status: 'Scheduled',
+        certificateUpload: ''
+      },
+
+      // 6. Defibrillator - Completed test + Next test scheduled in 135 days
+      {
+        equipment: defibrillator._id,
+        calibrationDate: daysAgo(45),
+        dueDate: daysFromNow(135),
+        engineer: engineerUser._id,
+        result: 'Pass',
+        observations: 'Discharge energy verified at 50J, 100J, 200J, 360J using Fluke Impulse 7000DP.',
+        status: 'Completed',
+        certificateUpload: '/uploads/calibration_cert_defibrillator.pdf'
+      },
+      {
+        equipment: defibrillator._id,
+        calibrationDate: daysAgo(45),
+        dueDate: daysFromNow(135),
+        engineer: engineerUser._id,
+        result: 'Pass',
+        observations: 'Next scheduled defibrillator energy delivery verification.',
+        status: 'Scheduled',
+        certificateUpload: ''
+      },
+
+      // 7. Anesthesia Machine - Completed test + Next test scheduled in 90 days
+      {
+        equipment: anesthesiaMachine._id,
+        calibrationDate: daysAgo(90),
+        dueDate: daysFromNow(90),
+        engineer: engineerUser._id,
+        result: 'Pass',
+        observations: 'Sevoflurane/Isoflurane vaporizer output within ±1%. O2 flush rate calibrated.',
+        status: 'Completed',
+        certificateUpload: '/uploads/calibration_cert_anesthesia.pdf'
+      },
+      {
+        equipment: anesthesiaMachine._id,
+        calibrationDate: daysAgo(90),
+        dueDate: daysFromNow(90),
+        engineer: engineerUser._id,
+        result: 'Pass',
+        observations: 'Next scheduled vaporizer and gas mixer calibration.',
+        status: 'Scheduled',
+        certificateUpload: ''
+      },
+
+      // 8. Blood Gas Analyzer - Completed test + Next test scheduled in 75 days
+      {
+        equipment: bloodGasAnalyzer._id,
+        calibrationDate: daysAgo(15),
+        dueDate: daysFromNow(75),
+        engineer: engineerUser._id,
+        result: 'Pass',
+        observations: 'Multi-point standard buffer calibration for pH, pCO2, pO2 passed.',
+        status: 'Completed',
+        certificateUpload: '/uploads/calibration_cert_blood_gas.pdf'
+      },
+      {
+        equipment: bloodGasAnalyzer._id,
+        calibrationDate: daysAgo(15),
+        dueDate: daysFromNow(75),
+        engineer: engineerUser._id,
+        result: 'Pass',
+        observations: 'Next scheduled electrode slope calibration.',
+        status: 'Scheduled',
+        certificateUpload: ''
       }
     ]);
-    console.log('Seeded 4 calibration records.');
+    console.log('Seeded 16 calibration records (completed tests with certificates and scheduled next cycles).');
 
     // ─── 8. Transfer History ────────────────────────────────────────────────────
     console.log('Seeding Transfer records...');

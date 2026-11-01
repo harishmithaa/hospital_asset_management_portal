@@ -39,7 +39,7 @@ const CalibrationSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Pending', 'Completed', 'Overdue', 'Cancelled'],
+    enum: ['Pending', 'Completed', 'Overdue', 'Cancelled', 'Scheduled'],
     default: 'Pending'
   }
 }, {

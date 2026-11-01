@@ -10,9 +10,10 @@ import {
 } from 'lucide-react';
 
 const statusColors = {
-  'Completed':      'bg-emerald-100 text-emerald-700 border border-emerald-200',
-  'Pending':        'bg-blue-100 text-blue-700 border border-blue-200',
-  'Overdue':        'bg-red-100 text-red-700 border border-red-200',
+  'Completed':      'bg-emerald-100 text-emerald-800 border border-emerald-200',
+  'Pending':        'bg-amber-100 text-amber-800 border border-amber-200',
+  'Scheduled':      'bg-blue-100 text-blue-700 border border-blue-200',
+  'Overdue':        'bg-red-100 text-red-800 border border-red-200',
   'Not Calibrated': 'bg-slate-100 text-slate-500 border border-slate-200',
   'Cancelled':      'bg-slate-100 text-slate-500 border border-slate-200',
 };
@@ -383,8 +384,12 @@ function ScheduleNextModal({ completedRecord, equipment, technicians, onClose, o
 
 // ─── Modal 3: Equipment Calibration History & Log Drawer ──────────────────
 function EquipmentHistoryDrawer({ equipment, records, technicians, onClose, onRefresh, onLogNew, onCompletePending }) {
+  const now = new Date();
+  const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
   const eqRecords = records.filter(r => (r.equipment?._id || r.equipment) === equipment._id);
-  const pendingRecord = eqRecords.find(r => r.status === 'Pending' || r.status === 'Overdue');
+  const pendingRecord = eqRecords.find(r => r.status === 'Pending' || r.status === 'Overdue') ||
+    eqRecords.find(r => r.status === 'Scheduled' && new Date(r.dueDate) <= oneWeekFromNow);
   const completedRecords = eqRecords.filter(r => r.status === 'Completed');
   const latestCompleted = completedRecords[0];
 
@@ -610,19 +615,34 @@ export default function Calibration() {
   // Compute calibration status for every equipment
   const equipmentCalibrationMap = useMemo(() => {
     const map = {};
+    const now = new Date();
+    const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
     equipmentList.forEach(eq => {
       const eqRecords = records.filter(r => (r.equipment?._id || r.equipment) === eq._id);
-      const pending = eqRecords.find(r => r.status === 'Pending' || r.status === 'Overdue');
+      const pendingOrOverdue = eqRecords.find(r => r.status === 'Pending' || r.status === 'Overdue');
+      const scheduled = eqRecords.find(r => r.status === 'Scheduled');
       const completed = eqRecords.filter(r => r.status === 'Completed');
       const latestCompleted = completed[0];
+      const nextDueDate = pendingOrOverdue?.dueDate || scheduled?.dueDate || eq.nextCalibrationDate || latestCompleted?.dueDate;
 
       let status = 'Not Calibrated';
-      if (pending) {
-        status = isPastDue(pending.dueDate) ? 'Overdue' : 'Pending';
+      if (!nextDueDate && !latestCompleted) {
+        status = 'Not Calibrated';
+      } else if (nextDueDate) {
+        const due = new Date(nextDueDate);
+        if (due < now) {
+          status = 'Overdue';
+        } else if (due <= oneWeekFromNow) {
+          // Within 1 week of due date -> turns to Pending!
+          status = 'Pending';
+        } else if (latestCompleted) {
+          status = 'Completed';
+        } else {
+          status = 'Scheduled';
+        }
       } else if (latestCompleted) {
-        status = isPastDue(latestCompleted.dueDate) ? 'Overdue' : 'Completed';
-      } else if (eq.nextCalibrationDate) {
-        status = isPastDue(eq.nextCalibrationDate) ? 'Overdue' : 'Completed';
+        status = 'Completed';
       }
 
       map[eq._id] = {
@@ -630,9 +650,10 @@ export default function Calibration() {
         records: eqRecords,
         status,
         lastDate: latestCompleted?.calibrationDate || eq.lastCalibrationDate,
-        nextDueDate: pending?.dueDate || latestCompleted?.dueDate || eq.nextCalibrationDate,
+        nextDueDate,
         latestCompleted,
-        pending
+        pending: pendingOrOverdue || (status === 'Pending' ? (scheduled || latestCompleted) : null),
+        scheduled
       };
     });
     return map;

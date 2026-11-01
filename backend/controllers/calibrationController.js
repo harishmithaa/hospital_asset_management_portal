@@ -19,11 +19,20 @@ exports.getCalibrations = async (req, res) => {
       query.engineer = req.user.id;
     }
 
-    // Auto-update overdue status
+    // Auto-update calibration statuses based on due date:
+    // 1. If dueDate is past (< now) and not Completed -> Overdue
+    // 2. If dueDate is within 7 days from now (or past) and was Scheduled -> Pending
     const now = new Date();
+    const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
     await Calibration.updateMany(
-      { dueDate: { $lt: now }, status: { $ne: 'Completed' } },
+      { dueDate: { $lt: now }, status: { $nin: ['Completed', 'Cancelled'] } },
       { $set: { status: 'Overdue' } }
+    );
+
+    await Calibration.updateMany(
+      { dueDate: { $gte: now, $lte: oneWeekFromNow }, status: 'Scheduled' },
+      { $set: { status: 'Pending' } }
     );
 
     const calibrations = await Calibration.find(query)
@@ -82,9 +91,27 @@ exports.createCalibration = async (req, res) => {
       finalStatus = 'Pending';
     }
 
+    // If scheduling next calibration (without completion certificate):
+    // Within 1 week of due date -> status turns to 'Pending'
+    // Past due -> 'Overdue'
+    // More than 1 week ahead -> 'Scheduled'
+    const now = new Date();
+    const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const targetDue = dueDate ? new Date(dueDate) : null;
+
+    if (finalStatus !== 'Completed' && targetDue) {
+      if (targetDue < now) {
+        finalStatus = 'Overdue';
+      } else if (targetDue <= oneWeekFromNow) {
+        finalStatus = 'Pending';
+      } else {
+        finalStatus = 'Scheduled';
+      }
+    }
+
     const calibration = await Calibration.create({
       equipment: equipmentId,
-      calibrationDate,
+      calibrationDate: calibrationDate || new Date(),
       dueDate,
       engineer: engineer || req.user.id,
       vendor: vendor || null,
@@ -102,7 +129,7 @@ exports.createCalibration = async (req, res) => {
         equipment.currentStatus = 'Out of Service';
       }
       await equipment.save();
-    } else if (calibration.status === 'Pending') {
+    } else if (calibration.status === 'Pending' || calibration.status === 'Scheduled' || calibration.status === 'Overdue') {
       if (dueDate) {
         equipment.nextCalibrationDate = dueDate;
         await equipment.save();

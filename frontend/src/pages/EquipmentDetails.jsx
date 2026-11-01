@@ -387,8 +387,13 @@ export default function EquipmentDetails() {
   const completedCals = (history.calibrations || []).filter(c => c.status === 'Completed');
   const latestCompletedCal = completedCals[0];
   const pendingCal = (history.calibrations || []).find(c => c.status === 'Pending' || c.status === 'Overdue');
+  const scheduledCal = (history.calibrations || []).find(c => c.status === 'Scheduled');
   const lastCalDate = equipment.lastCalibrationDate || latestCompletedCal?.calibrationDate;
-  const nextCalDate = equipment.nextCalibrationDate || pendingCal?.dueDate || latestCompletedCal?.dueDate;
+  const nextCalDate = equipment.nextCalibrationDate || pendingCal?.dueDate || scheduledCal?.dueDate || latestCompletedCal?.dueDate;
+
+  const nextCalDue = nextCalDate ? new Date(nextCalDate) : null;
+  const calDiffDays = nextCalDue ? Math.ceil((nextCalDue - now) / (1000 * 60 * 60 * 24)) : null;
+  const calStatus = !nextCalDue ? null : calDiffDays < 0 ? 'Overdue' : calDiffDays <= 7 ? 'Pending' : 'Completed';
 
   return (
     <div className="space-y-5 max-w-6xl mx-auto">
@@ -498,7 +503,20 @@ export default function EquipmentDetails() {
                     ['Last Maintenance', equipment.lastMaintenanceDate ? new Date(equipment.lastMaintenanceDate).toLocaleDateString() : 'Not recorded'],
                     ['Next Maintenance', equipment.nextMaintenanceDate ? new Date(equipment.nextMaintenanceDate).toLocaleDateString() : 'Not scheduled'],
                     ['Last Calibration', lastCalDate ? new Date(lastCalDate).toLocaleDateString() : 'Not recorded'],
-                    ['Next Calibration', nextCalDate ? new Date(nextCalDate).toLocaleDateString() : 'Not scheduled'],
+                    ['Next Calibration', nextCalDate ? (
+                      <span className="flex items-center gap-1.5 justify-end">
+                        <span>{new Date(nextCalDate).toLocaleDateString()}</span>
+                        {calStatus && (
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                            calStatus === 'Overdue' ? 'bg-red-100 text-red-700' :
+                            calStatus === 'Pending' ? 'bg-amber-100 text-amber-800' :
+                            'bg-emerald-100 text-emerald-800'
+                          }`}>
+                            {calStatus}
+                          </span>
+                        )}
+                      </span>
+                    ) : 'Not scheduled'],
                   ].map(([label, value]) => (
                     <div key={label} className="flex justify-between text-sm border-b border-slate-50 pb-2">
                       <span className="text-slate-500 text-xs">{label}</span>
@@ -624,14 +642,26 @@ export default function EquipmentDetails() {
                           <p className="text-xs font-bold text-slate-700">Calibration — {c.result}</p>
                           <p className="text-xs text-slate-400 mt-0.5">Date: {new Date(c.calibrationDate).toLocaleDateString()} · Due: {new Date(c.dueDate).toLocaleDateString()}</p>
                           {c.observations && <p className="text-xs text-slate-600 mt-1">{c.observations}</p>}
-                          {c.engineer && <p className="text-xs text-slate-400 mt-1">Technician: {c.engineer.name}</p>}
+                          {c.engineer && <p className="text-xs text-slate-400 mt-1">Technician: {c.engineer.name?.replace(/^Eng\.\s+/i, 'Tech. ')}</p>}
                         </div>
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${c.result === 'Pass' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>{c.result}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${c.result === 'Pass' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>{c.result}</span>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            c.status === 'Completed' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                            c.status === 'Pending' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                            c.status === 'Scheduled' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                            'bg-red-100 text-red-800 border border-red-200'
+                          }`}>
+                            {c.status || 'Completed'}
+                          </span>
+                        </div>
                       </div>
-                      {c.certificateUpload && (
-                        <a href={getFileUrl(c.certificateUpload)} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
-                          <FileText className="h-3 w-3" /> View Certificate
+                      {c.certificateUpload ? (
+                        <a href={getFileUrl(c.certificateUpload)} target="_blank" rel="noreferrer" className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 rounded-lg transition-colors shadow-xs">
+                          <FileText className="h-3.5 w-3.5 text-purple-600" /> View Certificate (PDF)
                         </a>
+                      ) : (
+                        <p className="mt-2 text-[11px] text-slate-400 italic">Certificate document pending submission</p>
                       )}
                     </div>
                   ))}
