@@ -49,6 +49,26 @@ const MaintenanceSchema = new mongoose.Schema({
     trim: true,
     default: ''
   },
+  // Structured spare parts replacement history
+  spareParts: [
+    {
+      partName: { type: String, trim: true, required: true },
+      partNumber: { type: String, trim: true, default: '' },
+      quantity: { type: Number, default: 1 },
+      unitCost: { type: Number, default: 0 },
+      suppliedBy: { type: String, trim: true, default: '' },
+      replacedDate: { type: Date, default: Date.now },
+      notes: { type: String, trim: true, default: '' }
+    }
+  ],
+  // Digital maintenance checklist
+  checklistItems: [
+    {
+      label: { type: String, trim: true, required: true },
+      status: { type: String, enum: ['Pending', 'Pass', 'Fail', 'N/A'], default: 'Pending' },
+      notes: { type: String, trim: true, default: '' }
+    }
+  ],
   remarks: {
     type: String,
     trim: true,

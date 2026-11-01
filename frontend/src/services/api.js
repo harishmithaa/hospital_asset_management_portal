@@ -65,6 +65,8 @@ export const maintenanceAPI = {
   create: (data) => api.post('/maintenance', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   update: (id, data) => api.put(`/maintenance/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   delete: (id) => api.delete(`/maintenance/${id}`),
+  updateChecklist: (id, checklistItems) => api.put(`/maintenance/${id}/checklist`, { checklistItems }),
+  updateSpareParts: (id, spareParts) => api.put(`/maintenance/${id}/spare-parts`, { spareParts }),
 };
 
 // Complaints

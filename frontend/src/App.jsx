@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import Equipment from './pages/Equipment';
 import EquipmentDetails from './pages/EquipmentDetails';
 import Maintenance from './pages/Maintenance';
+import MaintenanceChecklist from './pages/MaintenanceChecklist';
 import Complaints from './pages/Complaints';
 import Calibration from './pages/Calibration';
 import WarrantyAMC from './pages/WarrantyAMC';
@@ -93,13 +94,16 @@ export default function App() {
 
             {/* Admin + Technician pages */}
             <Route path="/maintenance" element={
-              <ProtectedRoute><RoleProtectedRoute allowedRoles={['Admin', 'Technician', 'Biomedical Engineer']}><Maintenance /></RoleProtectedRoute></ProtectedRoute>
+              <ProtectedRoute><RoleProtectedRoute allowedRoles={['Admin', 'Technician']}><Maintenance /></RoleProtectedRoute></ProtectedRoute>
+            } />
+            <Route path="/checklist" element={
+              <ProtectedRoute><RoleProtectedRoute allowedRoles={['Admin', 'Technician']}><MaintenanceChecklist /></RoleProtectedRoute></ProtectedRoute>
             } />
             <Route path="/complaints" element={
-              <ProtectedRoute><RoleProtectedRoute allowedRoles={['Admin', 'Technician', 'Biomedical Engineer']}><Complaints /></RoleProtectedRoute></ProtectedRoute>
+              <ProtectedRoute><RoleProtectedRoute allowedRoles={['Admin', 'Technician']}><Complaints /></RoleProtectedRoute></ProtectedRoute>
             } />
             <Route path="/calibration" element={
-              <ProtectedRoute><RoleProtectedRoute allowedRoles={['Admin', 'Technician', 'Biomedical Engineer']}><Calibration /></RoleProtectedRoute></ProtectedRoute>
+              <ProtectedRoute><RoleProtectedRoute allowedRoles={['Admin', 'Technician']}><Calibration /></RoleProtectedRoute></ProtectedRoute>
             } />
 
             {/* Department Staff pages */}

@@ -5,7 +5,9 @@ const {
   getMaintenanceById, 
   createMaintenance, 
   updateMaintenance, 
-  deleteMaintenance 
+  deleteMaintenance,
+  updateChecklist,
+  updateSpareParts
 } = require('../controllers/maintenanceController');
 const { protect, authorize } = require('../middleware/auth');
 const upload = require('../middleware/upload');
@@ -24,5 +26,9 @@ router.route('/:id')
   .get(protect, getMaintenanceById)
   .put(protect, multiUpload, updateMaintenance)
   .delete(protect, authorize('Admin'), deleteMaintenance);
+
+// Structured sub-resource endpoints
+router.put('/:id/checklist', protect, updateChecklist);
+router.put('/:id/spare-parts', protect, updateSpareParts);
 
 module.exports = router;

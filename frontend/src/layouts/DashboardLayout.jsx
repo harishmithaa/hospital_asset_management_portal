@@ -17,6 +17,7 @@ const NAV_CONFIG = {
     { name: 'Dashboard',      path: '/dashboard',    icon: LayoutDashboard },
     { name: 'Equipment',      path: '/equipment',    icon: Stethoscope },
     { name: 'Maintenance',    path: '/maintenance',  icon: Wrench },
+    { name: 'Checklist',      path: '/checklist',    icon: ClipboardList },
     { name: 'Complaints',     path: '/complaints',   icon: AlertCircle },
     { name: 'Calibration',    path: '/calibration',  icon: Gauge },
     { name: 'Departments',    path: '/departments',  icon: Building2 },
@@ -29,13 +30,7 @@ const NAV_CONFIG = {
     { name: 'Dashboard',   path: '/dashboard',   icon: LayoutDashboard },
     { name: 'Equipment',   path: '/equipment',   icon: Stethoscope },
     { name: 'Maintenance', path: '/maintenance', icon: Wrench },
-    { name: 'Complaints',  path: '/complaints',  icon: AlertCircle },
-    { name: 'Calibration', path: '/calibration', icon: Gauge },
-  ],
-  'Biomedical Engineer': [
-    { name: 'Dashboard',   path: '/dashboard',   icon: LayoutDashboard },
-    { name: 'Equipment',   path: '/equipment',   icon: Stethoscope },
-    { name: 'Maintenance', path: '/maintenance', icon: Wrench },
+    { name: 'Checklist',   path: '/checklist',   icon: ClipboardList },
     { name: 'Complaints',  path: '/complaints',  icon: AlertCircle },
     { name: 'Calibration', path: '/calibration', icon: Gauge },
   ],
@@ -73,6 +68,7 @@ const getPageTitle = (pathname, role) => {
   const map = {
     '/dashboard':        'Dashboard',
     '/maintenance':      'Maintenance',
+    '/checklist':        'Checklist & Spare Parts',
     '/complaints':       'Complaints',
     '/calibration':      'Calibration',
     '/departments':      'Departments',
@@ -89,7 +85,7 @@ const getPageTitle = (pathname, role) => {
   };
   if (pathname === '/equipment') {
     if (role === 'Vendor') return 'Assigned Equipment';
-    if (role === 'Department Staff' || role === 'Technician' || role === 'Biomedical Engineer') return 'My Equipment';
+    if (role === 'Department Staff' || role === 'Technician') return 'My Equipment';
     return 'Equipment';
   }
   if (pathname.startsWith('/equipment/')) return 'Equipment Details';

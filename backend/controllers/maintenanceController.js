@@ -19,7 +19,7 @@ exports.getMaintenance = async (req, res) => {
     if (equipment) query.equipment = equipment;
 
     // Role-based restrictions
-    if (req.user.role === 'Technician' || req.user.role === 'Biomedical Engineer') {
+    if (req.user.role === 'Technician') {
       query.engineer = req.user.id;
     }
 
@@ -141,8 +141,8 @@ exports.updateMaintenance = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Maintenance record not found' });
     }
 
-    // Engineer/Technician can only update their own assigned records
-    if ((req.user.role === 'Technician' || req.user.role === 'Biomedical Engineer') && record.engineer?.toString() !== req.user.id) {
+    // Technician can only update their own assigned records
+    if (req.user.role === 'Technician' && record.engineer?.toString() !== req.user.id) {
       return res.status(403).json({ success: false, message: 'Not authorized to update this record' });
     }
 
@@ -156,7 +156,9 @@ exports.updateMaintenance = async (req, res) => {
       nextServiceDate,
       reportPath,
       engineer,
-      vendor
+      vendor,
+      checklistItems,
+      spareParts
     } = req.body;
 
     if (status) record.status = status;
@@ -168,6 +170,13 @@ exports.updateMaintenance = async (req, res) => {
     if (nextServiceDate !== undefined) record.nextServiceDate = nextServiceDate;
     if (engineer !== undefined) record.engineer = engineer || null;
     if (vendor !== undefined) record.vendor = vendor || null;
+    // Accept JSON arrays for structured checklist and spare parts
+    if (checklistItems !== undefined) {
+      try { record.checklistItems = typeof checklistItems === 'string' ? JSON.parse(checklistItems) : checklistItems; } catch (e) {}
+    }
+    if (spareParts !== undefined) {
+      try { record.spareParts = typeof spareParts === 'string' ? JSON.parse(spareParts) : spareParts; } catch (e) {}
+    }
 
     // Handle file upload for service report (Bug #1 Fix: route uses upload.fields(), so files are in req.files not req.file)
     if (req.files && req.files['reportPath'] && req.files['reportPath'][0]) {
@@ -230,3 +239,55 @@ exports.deleteMaintenance = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Update checklist items for a maintenance record
+// @route   PUT /api/maintenance/:id/checklist
+// @access  Private/Admin/Technician
+exports.updateChecklist = async (req, res) => {
+  try {
+    const record = await Maintenance.findById(req.params.id);
+    if (!record) return res.status(404).json({ success: false, message: 'Not found' });
+
+    if (req.user.role === 'Technician' && record.engineer?.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    const { checklistItems } = req.body;
+    if (!Array.isArray(checklistItems)) {
+      return res.status(400).json({ success: false, message: 'checklistItems must be an array' });
+    }
+    record.checklistItems = checklistItems;
+    await record.save();
+    res.json({ success: true, maintenance: record });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Update spare parts replacement history
+// @route   PUT /api/maintenance/:id/spare-parts
+// @access  Private/Admin/Technician
+exports.updateSpareParts = async (req, res) => {
+  try {
+    const record = await Maintenance.findById(req.params.id);
+    if (!record) return res.status(404).json({ success: false, message: 'Not found' });
+
+    if (req.user.role === 'Technician' && record.engineer?.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    const { spareParts } = req.body;
+    if (!Array.isArray(spareParts)) {
+      return res.status(400).json({ success: false, message: 'spareParts must be an array' });
+    }
+    record.spareParts = spareParts;
+    // Recalculate total cost from spare parts
+    const partsTotal = spareParts.reduce((sum, p) => sum + (p.unitCost || 0) * (p.quantity || 1), 0);
+    if (partsTotal > 0) record.cost = partsTotal;
+    await record.save();
+    res.json({ success: true, maintenance: record });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

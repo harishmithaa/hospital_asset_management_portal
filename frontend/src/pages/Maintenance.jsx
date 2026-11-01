@@ -22,7 +22,7 @@ function ScheduleModal({ onClose, onSaved }) {
 
   useEffect(() => {
     equipmentAPI.getAll().then(r => r.data.success && setEquipment(r.data.equipment));
-    authAPI.getUsers().then(r => r.data.success && setEngineers(r.data.users.filter(u => u.role === 'Technician' || u.role === 'Biomedical Engineer')));
+    authAPI.getUsers().then(r => r.data.success && setEngineers(r.data.users.filter(u => u.role === 'Technician')));
   }, []);
 
   const handleSubmit = async (e) => {
