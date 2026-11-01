@@ -316,7 +316,7 @@ function RecordSelector({ records, onSelect, onClose }) {
                     </p>
                   )}
                 </div>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
+                <span className={`inline-flex items-center whitespace-nowrap text-[10px] font-bold px-2.5 py-0.5 rounded-full flex-shrink-0 ${
                   r.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' :
                   r.status === 'Pending Admin Audit' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
                   r.status === 'In Progress' ? 'bg-indigo-100 text-indigo-700' :
@@ -639,7 +639,7 @@ export default function MaintenanceChecklist() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${
+                <span className={`inline-flex items-center whitespace-nowrap text-xs font-bold px-3 py-1.5 rounded-full flex-shrink-0 ${
                   selectedRecord.status === 'Completed' ? 'bg-emerald-500/30 text-emerald-100' :
                   selectedRecord.status === 'Pending Admin Audit' ? 'bg-purple-500/40 text-purple-100 border border-purple-300/40 font-bold' :
                   selectedRecord.status === 'In Progress' ? 'bg-white/20 text-white' :

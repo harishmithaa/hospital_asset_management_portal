@@ -21,7 +21,7 @@ const priorityColors = {
   'Medium':   'bg-amber-100 text-amber-700',
   'Low':      'bg-green-100 text-green-700',
 };
-const Badge = ({ label, color }) => <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${color}`}>{label}</span>;
+const Badge = ({ label, color }) => <span className={`inline-flex items-center whitespace-nowrap text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${color}`}>{label}</span>;
 
 // ─── Pass Issue to Vendor Modal (Technician / Admin) ──────────────────────────
 function PassToVendorModal({ complaint, onClose, onSaved }) {
@@ -543,17 +543,17 @@ export default function Complaints() {
                   <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">ID</th>
                   <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Equipment</th>
                   <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider hidden md:table-cell">Issue</th>
-                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Priority</th>
-                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Priority</th>
+                  <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Status</th>
                   <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Assigned To</th>
                   <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Raised</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                  <th className="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {complaints.map(c => (
                   <tr key={c._id} className="hover:bg-slate-50 transition-colors group">
-                    <td className="py-3 px-4 text-xs font-mono text-slate-700">{c.complaintId}</td>
+                    <td className="py-3 px-4 text-xs font-mono text-slate-700 whitespace-nowrap">{c.complaintId}</td>
                     <td className="py-3 px-4">
                       <button className="text-left" onClick={() => navigate(`/equipment/${c.equipment?._id}`)}>
                         <p className="text-xs font-semibold text-blue-600 hover:underline">{c.equipment?.name}</p>
@@ -563,12 +563,12 @@ export default function Complaints() {
                       {/* Vendor escalation status & arrival pill */}
                       {c.passedToVendor && (
                         <div className="mt-1 space-y-0.5">
-                          <div className="flex items-center gap-1 text-[10px] font-semibold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 w-fit">
+                          <div className="flex items-center gap-1 text-[10px] font-semibold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 w-fit whitespace-nowrap">
                             <Building2 className="h-3 w-3 text-purple-600" />
                             <span>Vendor: {c.assignedVendor?.companyName || 'OEM Vendor'}</span>
                           </div>
                           {c.vendorArrivalDate && (
-                            <div className="flex items-center gap-1 text-[10px] font-medium text-indigo-600">
+                            <div className="flex items-center gap-1 text-[10px] font-medium text-indigo-600 whitespace-nowrap">
                               <Calendar className="h-2.5 w-2.5 text-indigo-500" />
                               <span>Arrival: {new Date(c.vendorArrivalDate).toLocaleDateString()}</span>
                               <span className="text-[9px] text-slate-400 font-mono">({c.vendorServiceStatus || 'Scheduled'})</span>
@@ -580,11 +580,11 @@ export default function Complaints() {
                     <td className="py-3 px-4 text-xs text-slate-600 hidden md:table-cell max-w-[200px] truncate" title={c.issueDescription}>
                       {c.issueDescription}
                     </td>
-                    <td className="py-3 px-4"><Badge label={c.priority} color={priorityColors[c.priority] || 'bg-slate-100 text-slate-600'} /></td>
-                    <td className="py-3 px-4"><Badge label={c.status} color={statusColors[c.status] || 'bg-slate-100 text-slate-600'} /></td>
-                    <td className="py-3 px-4 text-xs text-slate-600 hidden lg:table-cell">{c.assignedEngineer?.name || '—'}</td>
-                    <td className="py-3 px-4 text-xs text-slate-400 hidden lg:table-cell">{new Date(c.createdAt).toLocaleDateString()}</td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 whitespace-nowrap"><Badge label={c.priority} color={priorityColors[c.priority] || 'bg-slate-100 text-slate-600'} /></td>
+                    <td className="py-3 px-4 whitespace-nowrap"><Badge label={c.status} color={statusColors[c.status] || 'bg-slate-100 text-slate-600'} /></td>
+                    <td className="py-3 px-4 text-xs text-slate-600 hidden lg:table-cell whitespace-nowrap">{c.assignedEngineer?.name || '—'}</td>
+                    <td className="py-3 px-4 text-xs text-slate-400 hidden lg:table-cell whitespace-nowrap">{new Date(c.createdAt).toLocaleDateString()}</td>
+                    <td className="py-3 px-4 whitespace-nowrap">
                       <div className="flex items-center gap-1.5 justify-end flex-wrap">
                         {/* Technician / Admin: Pass to Vendor button */}
                         {(isAdmin || isEngineer) && !c.passedToVendor && !['Completed','Closed','Cancelled'].includes(c.status) && (

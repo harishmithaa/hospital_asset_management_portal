@@ -545,7 +545,7 @@ function EquipmentHistoryDrawer({ equipment, records, technicians, onClose, onRe
                       }`}>
                         {r.result}
                       </span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusColors[r.status] || 'bg-slate-100 text-slate-600'}`}>
+                      <span className={`inline-flex items-center whitespace-nowrap text-[10px] font-bold px-2.5 py-0.5 rounded-full ${statusColors[r.status] || 'bg-slate-100 text-slate-600'}`}>
                         {r.status}
                       </span>
                     </div>
@@ -931,8 +931,8 @@ export default function Calibration() {
                             <span className="text-slate-400 italic">Not set</span>
                           )}
                         </td>
-                        <td className="py-3.5 px-4">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusColors[data?.status] || 'bg-slate-100 text-slate-600'}`}>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center whitespace-nowrap text-[10px] font-bold px-2.5 py-0.5 rounded-full ${statusColors[data?.status] || 'bg-slate-100 text-slate-600'}`}>
                             {data?.status}
                           </span>
                         </td>

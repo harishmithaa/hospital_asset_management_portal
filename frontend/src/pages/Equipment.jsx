@@ -33,7 +33,7 @@ const isToday = (dateStr) => {
 };
 
 const StatusBadge = ({ status }) => (
-  <span className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border ${STATUS_COLORS[status] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+  <span className={`inline-flex items-center whitespace-nowrap text-[10px] font-semibold px-2.5 py-0.5 rounded-full border ${STATUS_COLORS[status] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
     {status}
   </span>
 );

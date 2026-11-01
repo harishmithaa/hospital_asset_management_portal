@@ -18,7 +18,7 @@ const statusColors = {
 };
 
 const StatusBadge = ({ status, large }) => (
-  <span className={`inline-flex items-center font-semibold rounded-full border ${large ? 'text-sm px-3 py-1' : 'text-[10px] px-2 py-0.5'} ${statusColors[status] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+  <span className={`inline-flex items-center whitespace-nowrap font-semibold rounded-full border ${large ? 'text-sm px-3 py-1' : 'text-[10px] px-2.5 py-0.5'} ${statusColors[status] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
     {status}
   </span>
 );
@@ -28,11 +28,13 @@ const complaintStatusColors = {
   'Accepted': 'bg-purple-100 text-purple-700',
   'In Progress': 'bg-indigo-100 text-indigo-700',
   'Waiting for Parts': 'bg-orange-100 text-orange-700',
+  'Waiting for Vendor': 'bg-purple-100 text-purple-700',
+  'Pending Admin Audit': 'bg-purple-100 text-purple-800 border border-purple-200 font-semibold',
   'Completed': 'bg-emerald-100 text-emerald-700',
   'Closed': 'bg-slate-100 text-slate-500', 'Cancelled': 'bg-red-100 text-red-700',
 };
 const ComplaintBadge = ({ status }) => (
-  <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full ${complaintStatusColors[status] || 'bg-slate-100 text-slate-600'}`}>{status}</span>
+  <span className={`inline-flex items-center whitespace-nowrap text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${complaintStatusColors[status] || 'bg-slate-100 text-slate-600'}`}>{status}</span>
 );
 
 const TABS = ['Overview','Maintenance','Complaints','Calibration','Warranty & AMC','Transfer History','Documents'];

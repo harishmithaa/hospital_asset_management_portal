@@ -12,7 +12,7 @@ const statusColors = {
   'Overdue':             'bg-red-100 text-red-700',
   'Cancelled':           'bg-slate-100 text-slate-500',
 };
-const StatusBadge = ({ status }) => <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusColors[status] || 'bg-slate-100 text-slate-600'}`}>{status}</span>;
+const StatusBadge = ({ status }) => <span className={`inline-flex items-center whitespace-nowrap text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${statusColors[status] || 'bg-slate-100 text-slate-600'}`}>{status}</span>;
 
 // ─── Schedule Maintenance Modal ───────────────────────────────────────────
 function ScheduleModal({ onClose, onSaved }) {
@@ -338,12 +338,12 @@ export default function Maintenance() {
                         <p className="text-[11px] text-slate-400">{r.equipment?.equipmentId}</p>
                       </button>
                     </td>
-                    <td className="py-3 px-4 text-xs text-slate-600">{r.type}</td>
-                    <td className="py-3 px-4 text-xs text-slate-600">{new Date(r.scheduledDate).toLocaleDateString()}</td>
-                    <td className="py-3 px-4"><StatusBadge status={r.status} /></td>
-                    <td className="py-3 px-4 text-xs text-slate-600 hidden md:table-cell">{r.engineer?.name || '—'}</td>
-                    <td className="py-3 px-4 text-xs text-slate-600 hidden lg:table-cell">{r.cost > 0 ? `₹${r.cost.toLocaleString()}` : '—'}</td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3 px-4 text-xs text-slate-600 whitespace-nowrap">{r.type}</td>
+                    <td className="py-3 px-4 text-xs text-slate-600 whitespace-nowrap">{new Date(r.scheduledDate).toLocaleDateString()}</td>
+                    <td className="py-3 px-4 whitespace-nowrap"><StatusBadge status={r.status} /></td>
+                    <td className="py-3 px-4 text-xs text-slate-600 hidden md:table-cell whitespace-nowrap">{r.engineer?.name || '—'}</td>
+                    <td className="py-3 px-4 text-xs text-slate-600 hidden lg:table-cell whitespace-nowrap">{r.cost > 0 ? `₹${r.cost.toLocaleString()}` : '—'}</td>
+                    <td className="py-3 px-4 text-right whitespace-nowrap">
                       <div className="flex items-center gap-1.5 justify-end">
                         {isAdmin && r.status === 'Pending Admin Audit' && (
                           <button

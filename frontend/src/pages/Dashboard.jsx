@@ -53,7 +53,7 @@ const statusBadge = (status) => {
     'Overdue':          'bg-red-100 text-red-700',
   };
   return (
-    <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full ${map[status] || 'bg-slate-100 text-slate-600'}`}>
+    <span className={`inline-flex items-center whitespace-nowrap text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${map[status] || 'bg-slate-100 text-slate-600'}`}>
       {status}
     </span>
   );
@@ -61,7 +61,7 @@ const statusBadge = (status) => {
 
 const priorityBadge = (priority) => {
   const map = { 'Critical': 'bg-red-100 text-red-700', 'High': 'bg-orange-100 text-orange-700', 'Medium': 'bg-amber-100 text-amber-700', 'Low': 'bg-green-100 text-green-700' };
-  return <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full ${map[priority] || 'bg-slate-100 text-slate-600'}`}>{priority}</span>;
+  return <span className={`inline-flex items-center whitespace-nowrap text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${map[priority] || 'bg-slate-100 text-slate-600'}`}>{priority}</span>;
 };
 
 // ─── Admin Dashboard ──────────────────────────────────────────────────────
