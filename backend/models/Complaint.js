@@ -40,7 +40,7 @@ const ComplaintSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Open', 'Assigned', 'Accepted', 'In Progress', 'Waiting for Parts', 'Waiting for Vendor', 'Completed', 'Closed', 'Cancelled'],
+    enum: ['Open', 'Assigned', 'Accepted', 'In Progress', 'Waiting for Parts', 'Waiting for Vendor', 'Pending Admin Audit', 'Completed', 'Closed', 'Cancelled'],
     default: 'Open'
   },
   assignedEngineer: {

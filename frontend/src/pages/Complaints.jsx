@@ -10,6 +10,7 @@ const statusColors = {
   'In Progress':        'bg-indigo-100 text-indigo-700',
   'Waiting for Parts':  'bg-orange-100 text-orange-700',
   'Waiting for Vendor': 'bg-purple-100 text-purple-700 border border-purple-200',
+  'Pending Admin Audit':'bg-purple-100 text-purple-800 border border-purple-300 font-semibold',
   'Completed':          'bg-emerald-100 text-emerald-700',
   'Closed':             'bg-slate-100 text-slate-500',
   'Cancelled':          'bg-red-100 text-red-700',
@@ -328,16 +329,23 @@ function UpdateModal({ complaint, engineers, onClose, onSaved }) {
   };
 
   const availableStatuses = isAdmin
-    ? ['Open','Assigned','In Progress','Waiting for Parts','Waiting for Vendor','Completed','Closed','Cancelled']
+    ? ['Open','Assigned','In Progress','Waiting for Parts','Waiting for Vendor','Pending Admin Audit','Completed','Closed','Cancelled']
     : isEngineer
-    ? ['In Progress','Waiting for Parts','Waiting for Vendor','Completed']
+    ? ['In Progress','Waiting for Parts','Waiting for Vendor','Pending Admin Audit']
     : [];
+
+  const isSendingForAudit = form.status === 'Pending Admin Audit';
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h3 className="font-bold text-slate-800">Update Complaint</h3>
+          <div>
+            <h3 className="font-bold text-slate-800">Update Complaint</h3>
+            {isEngineer && (
+              <p className="text-[11px] text-slate-400">Technicians submit completed work for Admin Audit</p>
+            )}
+          </div>
           <button onClick={onClose}><X className="h-5 w-5 text-slate-400" /></button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -356,13 +364,28 @@ function UpdateModal({ complaint, engineers, onClose, onSaved }) {
           )}
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1.5">Status</label>
-            <select value={form.status} onChange={e => setForm(f=>({...f, status: e.target.value}))} className="input-field">
-              {availableStatuses.map(s => <option key={s} value={s}>{s}</option>)}
+            <select value={form.status} onChange={e => setForm(f=>({...f, status: e.target.value}))} className="input-field font-medium">
+              {availableStatuses.map(s => (
+                <option key={s} value={s}>
+                  {s === 'Pending Admin Audit' && isEngineer ? 'Send for Admin Audit' : s}
+                </option>
+              ))}
             </select>
+            {isSendingForAudit && isEngineer && (
+              <p className="text-[11px] text-purple-700 bg-purple-50 p-2 rounded-lg border border-purple-200 mt-2">
+                This will submit your work to Admin for audit. Once Admin reviews and approves it, the status will be marked Completed everywhere.
+              </p>
+            )}
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1.5">Note (optional)</label>
-            <textarea value={form.note} onChange={e => setForm(f=>({...f, note: e.target.value}))} className="input-field resize-none" rows={2} placeholder="Add a progress note..." />
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5">Note {isSendingForAudit ? '(Work Summary for Admin Audit)' : '(optional)'}</label>
+            <textarea
+              value={form.note}
+              onChange={e => setForm(f=>({...f, note: e.target.value}))}
+              className="input-field resize-none"
+              rows={2}
+              placeholder={isSendingForAudit ? "Describe work done, parts replaced, and verification tests completed..." : "Add a progress note..."}
+            />
           </div>
 
           {(isAdmin || isEngineer) && (
@@ -383,7 +406,17 @@ function UpdateModal({ complaint, engineers, onClose, onSaved }) {
 
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
-            <button type="submit" disabled={saving} className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 disabled:opacity-50">{saving ? 'Updating...' : 'Update'}</button>
+            <button
+              type="submit"
+              disabled={saving}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-colors disabled:opacity-50 ${
+                isSendingForAudit && isEngineer
+                  ? 'bg-purple-600 hover:bg-purple-700 shadow-sm'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+            >
+              {saving ? 'Submitting...' : isSendingForAudit && isEngineer ? 'Send for Admin Audit' : 'Update'}
+            </button>
           </div>
         </form>
       </div>
@@ -426,6 +459,20 @@ export default function Complaints() {
 
   const openCount = complaints.filter(c => ['Open','Assigned','In Progress','Waiting for Vendor','Waiting for Parts'].includes(c.status)).length;
   const criticalCount = complaints.filter(c => c.priority === 'Critical' && !['Completed','Closed'].includes(c.status)).length;
+  const pendingAuditCount = complaints.filter(c => c.status === 'Pending Admin Audit').length;
+
+  const handleAdminAuditComplete = async (c) => {
+    if (!window.confirm(`Approve audit for complaint ${c.complaintId}? This will mark it as Completed everywhere and return ${c.equipment?.name || 'the equipment'} to Working status.`)) return;
+    try {
+      await complaintAPI.update(c._id, {
+        status: 'Completed',
+        note: 'Admin audit passed and verified. Marked Completed everywhere.'
+      });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to complete audit');
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -435,6 +482,12 @@ export default function Complaints() {
           <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg">
             <AlertCircle className="h-3.5 w-3.5 text-blue-500" />
             <span className="text-xs font-semibold text-blue-700">{openCount} open</span>
+          </div>
+        )}
+        {pendingAuditCount > 0 && (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 border border-purple-200 rounded-lg">
+            <CheckCircle2 className="h-3.5 w-3.5 text-purple-600" />
+            <span className="text-xs font-bold text-purple-700">{pendingAuditCount} awaiting admin audit</span>
           </div>
         )}
         {criticalCount > 0 && (
@@ -454,6 +507,7 @@ export default function Complaints() {
           <option value="In Progress">In Progress</option>
           <option value="Waiting for Vendor">Waiting for Vendor</option>
           <option value="Waiting for Parts">Waiting for Parts</option>
+          <option value="Pending Admin Audit">Pending Admin Audit</option>
           <option value="Completed">Completed</option>
           <option value="Closed">Closed</option>
         </select>
@@ -565,6 +619,25 @@ export default function Complaints() {
                             <ClipboardList className="h-3 w-3 text-blue-600" />
                             <span className="hidden sm:inline">Checklist</span>
                           </button>
+                        )}
+
+                        {/* Admin Audit & Complete Button */}
+                        {isAdmin && c.status === 'Pending Admin Audit' && (
+                          <button
+                            onClick={() => handleAdminAuditComplete(c)}
+                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors shadow-xs"
+                            title="Audit technician work and mark completed everywhere"
+                          >
+                            <CheckCircle2 className="h-3 w-3" />
+                            <span>Audit & Complete</span>
+                          </button>
+                        )}
+
+                        {/* Technician: Indicator when ticket is with admin for audit */}
+                        {isEngineer && c.status === 'Pending Admin Audit' && (
+                          <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-1 rounded-lg border border-purple-200">
+                            Under Admin Audit
+                          </span>
                         )}
 
                         {(isAdmin || isEngineer) && !['Completed','Closed','Cancelled'].includes(c.status) && (

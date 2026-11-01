@@ -5,12 +5,13 @@ import { complaintAPI } from '../../services/api';
 import { ClipboardList, Plus, ChevronRight } from 'lucide-react';
 
 const statusColors = {
-  'Open':        'bg-blue-100 text-blue-700',
-  'Assigned':    'bg-amber-100 text-amber-700',
-  'In Progress': 'bg-indigo-100 text-indigo-700',
-  'Completed':   'bg-emerald-100 text-emerald-700',
-  'Closed':      'bg-slate-100 text-slate-500',
-  'Cancelled':   'bg-red-100 text-red-700',
+  'Open':               'bg-blue-100 text-blue-700',
+  'Assigned':           'bg-amber-100 text-amber-700',
+  'In Progress':        'bg-indigo-100 text-indigo-700',
+  'Pending Admin Audit':'bg-purple-100 text-purple-800 border border-purple-200 font-semibold',
+  'Completed':          'bg-emerald-100 text-emerald-700',
+  'Closed':             'bg-slate-100 text-slate-500',
+  'Cancelled':          'bg-red-100 text-red-700',
 };
 const priorityColors = {
   'Critical': 'bg-red-100 text-red-700',
@@ -87,7 +88,7 @@ export default function MyComplaints() {
 
       {/* Filter */}
       <div className="bg-white rounded-xl border border-slate-200 p-3 flex gap-3 flex-wrap">
-        {['', 'Open', 'Assigned', 'In Progress', 'Completed', 'Closed'].map(s => (
+        {['', 'Open', 'Assigned', 'In Progress', 'Pending Admin Audit', 'Completed', 'Closed'].map(s => (
           <button
             key={s}
             onClick={() => setFilterStatus(s)}

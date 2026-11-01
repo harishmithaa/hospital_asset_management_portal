@@ -94,7 +94,7 @@ const MaintenanceSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Scheduled', 'In Progress', 'Completed', 'Overdue', 'Cancelled'],
+    enum: ['Scheduled', 'In Progress', 'Pending Admin Audit', 'Completed', 'Overdue', 'Cancelled'],
     default: 'Scheduled'
   },
   reportPath: {

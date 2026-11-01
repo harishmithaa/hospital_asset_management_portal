@@ -5,11 +5,12 @@ import { maintenanceAPI, equipmentAPI, authAPI } from '../services/api';
 import { Wrench, Plus, X, Filter, ChevronRight, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 
 const statusColors = {
-  'Scheduled':   'bg-blue-100 text-blue-700',
-  'In Progress': 'bg-indigo-100 text-indigo-700',
-  'Completed':   'bg-emerald-100 text-emerald-700',
-  'Overdue':     'bg-red-100 text-red-700',
-  'Cancelled':   'bg-slate-100 text-slate-500',
+  'Scheduled':           'bg-blue-100 text-blue-700',
+  'In Progress':         'bg-indigo-100 text-indigo-700',
+  'Pending Admin Audit': 'bg-purple-100 text-purple-800 border border-purple-200 font-semibold',
+  'Completed':           'bg-emerald-100 text-emerald-700',
+  'Overdue':             'bg-red-100 text-red-700',
+  'Cancelled':           'bg-slate-100 text-slate-500',
 };
 const StatusBadge = ({ status }) => <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusColors[status] || 'bg-slate-100 text-slate-600'}`}>{status}</span>;
 
@@ -95,6 +96,10 @@ function ScheduleModal({ onClose, onSaved }) {
 
 // ─── Update Maintenance Modal (Engineer) ──────────────────────────────────
 function UpdateModal({ record, onClose, onSaved }) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'Admin';
+  const isEngineer = user?.role === 'Technician' || user?.role === 'Biomedical Engineer';
+
   const [form, setForm] = useState({
     status: record.status,
     completedDate: new Date().toISOString().slice(0,10),
@@ -119,11 +124,18 @@ function UpdateModal({ record, onClose, onSaved }) {
     finally { setSaving(false); }
   };
 
+  const isSendingForAudit = form.status === 'Pending Admin Audit';
+
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h3 className="font-bold text-slate-800">Update Maintenance</h3>
+          <div>
+            <h3 className="font-bold text-slate-800">Update Maintenance</h3>
+            {isEngineer && (
+              <p className="text-[11px] text-slate-400">Technicians submit finished maintenance for Admin Audit</p>
+            )}
+          </div>
           <button onClick={onClose}><X className="h-5 w-5 text-slate-400" /></button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -148,14 +160,26 @@ function UpdateModal({ record, onClose, onSaved }) {
 
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1.5">Status</label>
-            <select value={form.status} onChange={e => setForm(f=>({...f, status: e.target.value}))} className="input-field">
+            <select value={form.status} onChange={e => setForm(f=>({...f, status: e.target.value}))} className="input-field font-medium">
               <option value="Scheduled">Scheduled</option>
               <option value="In Progress">In Progress</option>
-              <option value="Completed">Completed</option>
+              {isEngineer ? (
+                <option value="Pending Admin Audit">Send for Admin Audit</option>
+              ) : (
+                <>
+                  <option value="Pending Admin Audit">Pending Admin Audit</option>
+                  <option value="Completed">Completed</option>
+                </>
+              )}
               <option value="Cancelled">Cancelled</option>
             </select>
+            {isSendingForAudit && isEngineer && (
+              <p className="text-[11px] text-purple-700 bg-purple-50 p-2 rounded-lg border border-purple-200 mt-2">
+                This will submit the record to Admin for audit. Status will turn Completed everywhere once approved by Admin.
+              </p>
+            )}
           </div>
-          {form.status === 'Completed' && (
+          {form.status === 'Completed' && isAdmin && (
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5">Completed Date</label>
               <input type="date" value={form.completedDate} onChange={e => setForm(f=>({...f, completedDate: e.target.value}))} className="input-field" />
@@ -185,7 +209,17 @@ function UpdateModal({ record, onClose, onSaved }) {
           </div>
           <div className="flex gap-3">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
-            <button type="submit" disabled={saving} className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 disabled:opacity-50">{saving ? 'Updating...' : 'Update'}</button>
+            <button
+              type="submit"
+              disabled={saving}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-colors disabled:opacity-50 ${
+                isSendingForAudit && isEngineer
+                  ? 'bg-purple-600 hover:bg-purple-700 shadow-sm'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+            >
+              {saving ? 'Saving...' : isSendingForAudit && isEngineer ? 'Send for Admin Audit' : 'Update'}
+            </button>
           </div>
         </form>
       </div>
@@ -219,12 +253,19 @@ export default function Maintenance() {
   useEffect(() => { load(); }, [filterStatus, filterType]);
 
   const overdueCount = records.filter(r => r.status === 'Overdue').length;
+  const pendingAuditCount = records.filter(r => r.status === 'Pending Admin Audit').length;
 
   return (
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
+          {pendingAuditCount > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 border border-purple-200 rounded-lg">
+              <CheckCircle className="h-3.5 w-3.5 text-purple-600" />
+              <span className="text-xs font-bold text-purple-700">{pendingAuditCount} awaiting admin audit</span>
+            </div>
+          )}
           {overdueCount > 0 && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg">
               <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
@@ -245,6 +286,7 @@ export default function Maintenance() {
           <option value="">All Statuses</option>
           <option value="Scheduled">Scheduled</option>
           <option value="In Progress">In Progress</option>
+          <option value="Pending Admin Audit">Pending Admin Audit</option>
           <option value="Completed">Completed</option>
           <option value="Overdue">Overdue</option>
           <option value="Cancelled">Cancelled</option>
@@ -301,10 +343,20 @@ export default function Maintenance() {
                     <td className="py-3 px-4"><StatusBadge status={r.status} /></td>
                     <td className="py-3 px-4 text-xs text-slate-600 hidden md:table-cell">{r.engineer?.name || '—'}</td>
                     <td className="py-3 px-4 text-xs text-slate-600 hidden lg:table-cell">{r.cost > 0 ? `₹${r.cost.toLocaleString()}` : '—'}</td>
-                    <td className="py-3 px-4">
-                      {(isAdmin || r.engineer?._id === user?._id) && r.status !== 'Completed' && r.status !== 'Cancelled' && (
-                        <button onClick={() => setShowUpdate(r)} className="text-xs text-blue-600 font-semibold hover:underline opacity-0 group-hover:opacity-100 transition-all">Update</button>
-                      )}
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex items-center gap-1.5 justify-end">
+                        {isAdmin && r.status === 'Pending Admin Audit' && (
+                          <button
+                            onClick={() => setShowUpdate(r)}
+                            className="px-2.5 py-1 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs transition-colors"
+                          >
+                            Audit
+                          </button>
+                        )}
+                        {(isAdmin || r.engineer?._id === user?._id) && r.status !== 'Completed' && r.status !== 'Cancelled' && (
+                          <button onClick={() => setShowUpdate(r)} className="text-xs text-blue-600 font-semibold hover:underline transition-all">Update</button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

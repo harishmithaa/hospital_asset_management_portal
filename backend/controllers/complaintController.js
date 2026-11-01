@@ -223,31 +223,92 @@ exports.updateComplaint = async (req, res) => {
       }
     }
 
-    // Status transitions (Engineer or Admin updates)
-    if (status && status !== complaint.status && !assignedEngineer) {
-      complaint.status = status;
+    // Status transitions (Technician or Admin updates)
+    if (status && !assignedEngineer) {
+      let targetStatus = status;
 
-      complaint.updates.push({
-        status,
-        note: note || (vendorArrivalDate ? `Vendor arrival date recorded: ${new Date(vendorArrivalDate).toLocaleDateString()}` : `Status updated to ${status}.`),
-        updatedBy: req.user._id
-      });
+      // Technicians cannot mark as Completed directly — redirect to 'Pending Admin Audit'
+      const isTech = req.user.role === 'Technician' || req.user.role === 'Biomedical Engineer';
+      if (isTech && targetStatus === 'Completed') {
+        targetStatus = 'Pending Admin Audit';
+      }
 
-      // When resolved — restore equipment to Working
-      if (status === 'Completed' || status === 'Closed') {
-        const equip = await Equipment.findById(complaint.equipment);
-        if (equip && equip.currentStatus === 'Under Maintenance') {
-          equip.currentStatus = 'Working';
-          await equip.save();
+      if (targetStatus !== complaint.status) {
+        complaint.status = targetStatus;
+
+        let statusNote = note;
+        if (!statusNote) {
+          if (targetStatus === 'Pending Admin Audit') {
+            statusNote = 'Work completed by technician. Sent for Admin Audit.';
+          } else if (vendorArrivalDate) {
+            statusNote = `Vendor arrival date recorded: ${new Date(vendorArrivalDate).toLocaleDateString()}`;
+          } else {
+            statusNote = `Status updated to ${targetStatus}.`;
+          }
         }
 
-        // Notify the staff member
-        await Notification.create({
-          user: complaint.raisedBy,
-          title: 'Complaint Resolved',
-          message: `Your complaint ${complaint.complaintId} has been marked as ${status}. Equipment is back in service.`,
-          category: 'Success'
+        complaint.updates.push({
+          status: targetStatus,
+          note: statusNote,
+          updatedBy: req.user._id
         });
+
+        // Case 1: Technician sends for Admin Audit
+        if (targetStatus === 'Pending Admin Audit') {
+          // Sync linked Maintenance to 'Pending Admin Audit'
+          const linkedMaint = await Maintenance.findOne({ complaint: complaint._id });
+          if (linkedMaint && linkedMaint.status !== 'Completed') {
+            linkedMaint.status = 'Pending Admin Audit';
+            await linkedMaint.save();
+          }
+
+          // Notify all Admins that technician completed work and ticket is ready for audit
+          const adminUsers = await User.find({ role: 'Admin' });
+          const equip = await Equipment.findById(complaint.equipment);
+          for (const admin of adminUsers) {
+            await Notification.create({
+              user: admin._id,
+              title: 'Audit Required: Complaint Completed by Technician',
+              message: `Technician ${req.user.name} completed work on complaint ${complaint.complaintId} (${equip?.name || 'Equipment'}). Sent for Admin Audit.`,
+              category: 'Warning'
+            });
+          }
+        }
+
+        // Case 2: Admin approves and marks as Completed / Closed
+        if (targetStatus === 'Completed' || targetStatus === 'Closed') {
+          const equip = await Equipment.findById(complaint.equipment);
+          if (equip && (equip.currentStatus === 'Under Maintenance' || equip.currentStatus === 'Out of Service')) {
+            equip.currentStatus = 'Working';
+            await equip.save();
+          }
+
+          // Mark linked maintenance as Completed
+          const linkedMaint = await Maintenance.findOne({ complaint: complaint._id });
+          if (linkedMaint && linkedMaint.status !== 'Completed') {
+            linkedMaint.status = 'Completed';
+            linkedMaint.completedDate = new Date();
+            await linkedMaint.save();
+          }
+
+          // Notify the staff member who raised it
+          await Notification.create({
+            user: complaint.raisedBy,
+            title: 'Complaint Resolved & Verified',
+            message: `Your complaint ${complaint.complaintId} has been verified and marked as ${targetStatus}. Equipment is back in service.`,
+            category: 'Success'
+          });
+
+          // Notify technician that work was audited and approved
+          if (complaint.assignedEngineer) {
+            await Notification.create({
+              user: complaint.assignedEngineer,
+              title: 'Audit Approved: Complaint Completed',
+              message: `Admin ${req.user.name} approved audit for complaint ${complaint.complaintId}. Status is now marked Completed everywhere.`,
+              category: 'Success'
+            });
+          }
+        }
       }
     } else if (note && !assignedEngineer) {
       complaint.updates.push({

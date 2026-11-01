@@ -46,6 +46,7 @@ const statusBadge = (status) => {
     'Open':             'bg-blue-100 text-blue-700',
     'Assigned':         'bg-amber-100 text-amber-700',
     'In Progress':      'bg-indigo-100 text-indigo-700',
+    'Pending Admin Audit': 'bg-purple-100 text-purple-700 border border-purple-200 font-bold',
     'Completed':        'bg-emerald-100 text-emerald-700',
     'Closed':           'bg-slate-100 text-slate-500',
     'Scheduled':        'bg-blue-100 text-blue-700',
@@ -118,6 +119,10 @@ function AdminDashboard() {
     { name: 'Out of Service', value: outOfService },
   ].filter(d => d.value > 0);
 
+  const pendingAuditComplaints = complaints.filter(c => c.status === 'Pending Admin Audit').length;
+  const pendingAuditMaint = maintenance.filter(m => m.status === 'Pending Admin Audit').length;
+  const pendingAuditCount = pendingAuditComplaints + pendingAuditMaint;
+
   // Department distribution
   const deptMap = {};
   equipment.forEach(e => {
@@ -133,6 +138,7 @@ function AdminDashboard() {
     { name: 'In Progress', value: complaints.filter(c => c.status === 'In Progress').length },
     { name: 'Waiting for Vendor', value: complaints.filter(c => c.status === 'Waiting for Vendor').length },
     { name: 'Waiting for Parts', value: complaints.filter(c => c.status === 'Waiting for Parts').length },
+    { name: 'Pending Admin Audit', value: pendingAuditComplaints },
     { name: 'Completed', value: complaints.filter(c => c.status === 'Completed').length },
   ].filter(d => d.value > 0);
 
@@ -155,6 +161,30 @@ function AdminDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Pending Admin Audit Notification Banner */}
+      {pendingAuditCount > 0 && (
+        <div className="bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 rounded-xl p-4 text-white shadow-md flex items-center justify-between border border-purple-500/30">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 bg-white/20 rounded-xl flex items-center justify-center font-bold text-lg flex-shrink-0">
+              {pendingAuditCount}
+            </div>
+            <div>
+              <p className="font-bold text-sm">Action Required: Technician Work Awaiting Admin Audit</p>
+              <p className="text-xs text-purple-100">
+                Technicians finished work and submitted {pendingAuditCount} item{pendingAuditCount > 1 ? 's' : ''} ({pendingAuditComplaints} complaint{pendingAuditComplaints === 1 ? '' : 's'}, {pendingAuditMaint} maintenance) for your final audit and completion sign-off.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/complaints?status=Pending+Admin+Audit')}
+            className="px-4 py-2 bg-white text-purple-800 font-bold text-xs rounded-lg hover:bg-purple-50 transition-colors shadow-sm flex items-center gap-1.5 flex-shrink-0"
+          >
+            <span>Audit & Review</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
         <StatCard label="Total Equipment" value={equipment.length} icon={Stethoscope} color="bg-blue-500" onClick={() => navigate('/equipment')} />
@@ -371,9 +401,29 @@ function EngineerDashboard() {
     const now = new Date();
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
+  const underAuditCount = complaints.filter(c => c.status === 'Pending Admin Audit').length + maintenance.filter(m => m.status === 'Pending Admin Audit').length;
 
   return (
     <div className="space-y-6">
+      {/* Under Admin Audit Alert for Technician */}
+      {underAuditCount > 0 && (
+        <div className="bg-purple-50 border border-purple-200 rounded-xl p-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Clock className="h-4 w-4 text-purple-600 flex-shrink-0" />
+            <p className="text-xs font-semibold text-purple-900">
+              You have <strong>{underAuditCount}</strong> task{underAuditCount > 1 ? 's' : ''} submitted for Admin Audit. Once Admin inspects and approves, they will be marked Completed everywhere.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/complaints?status=Pending+Admin+Audit')}
+            className="text-xs font-bold text-purple-700 hover:text-purple-800 hover:underline flex items-center gap-1 flex-shrink-0"
+          >
+            <span>View Submissions</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* KPI */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
         <StatCard

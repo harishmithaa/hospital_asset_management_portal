@@ -5,7 +5,7 @@ import { maintenanceAPI } from '../services/api';
 import {
   ClipboardList, Package, CheckCircle2,
   XCircle, Minus, Clock, Plus, Trash2, Save, X, Wrench,
-  Search, Edit3, AlertCircle
+  Search, Edit3, AlertCircle, Send, ShieldCheck
 } from 'lucide-react';
 
 // ─── Status config for checklist items ────────────────────────────────────
@@ -318,6 +318,7 @@ function RecordSelector({ records, onSelect, onClose }) {
                 </div>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
                   r.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' :
+                  r.status === 'Pending Admin Audit' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
                   r.status === 'In Progress' ? 'bg-indigo-100 text-indigo-700' :
                   r.status === 'Overdue' ? 'bg-red-100 text-red-700' :
                   'bg-slate-100 text-slate-600'
@@ -334,6 +335,8 @@ function RecordSelector({ records, onSelect, onClose }) {
 // ─── Main Component ───────────────────────────────────────────────────────
 export default function MaintenanceChecklist() {
   const { user } = useAuth();
+  const isAdmin = user?.role === 'Admin';
+  const isEngineer = user?.role === 'Technician' || user?.role === 'Biomedical Engineer';
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const complaintIdParam = searchParams.get('complaintId');
@@ -405,34 +408,63 @@ export default function MaintenanceChecklist() {
   const completeMaintenanceRecord = async () => {
     if (!selectedRecord) return;
     const isComplaint = !!selectedRecord.complaint;
-    const confirmMsg = isComplaint
-      ? `Complete corrective maintenance? This will resolve complaint ${selectedRecord.complaint.complaintId || ''} and return the equipment to Working status.`
-      : 'Mark this maintenance record as Completed and return equipment to Working status?';
 
-    if (!window.confirm(confirmMsg)) return;
+    if (isEngineer) {
+      const confirmMsg = isComplaint
+        ? `Submit this maintenance checklist and complaint ${selectedRecord.complaint.complaintId || ''} for Admin Audit? Admin will verify your work and mark it as Completed.`
+        : 'Submit this maintenance checklist for Admin Audit? Admin will review and approve completion.';
 
-    setCompleting(true);
-    try {
-      const res = await maintenanceAPI.update(selectedRecord._id, {
-        status: 'Completed',
-        completedDate: new Date(),
-        nextServiceDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      });
-      if (res.data.success) {
-        alert(
-          isComplaint
-            ? `Maintenance completed! Complaint ${selectedRecord.complaint.complaintId || ''} is now Resolved and equipment is back to Working.`
-            : 'Maintenance marked as Completed! Equipment returned to Working status.'
-        );
-        await loadRecords();
-        if (res.data.maintenance) {
-          selectRecord(res.data.maintenance);
+      if (!window.confirm(confirmMsg)) return;
+
+      setCompleting(true);
+      try {
+        const res = await maintenanceAPI.update(selectedRecord._id, {
+          status: 'Pending Admin Audit',
+          workDescription: selectedRecord.workDescription || 'Maintenance checklist completed by technician. Sent for Admin Audit.'
+        });
+        if (res.data.success) {
+          alert('Maintenance checklist submitted for Admin Audit! Admin has been notified to verify and approve completion.');
+          await loadRecords();
+          if (res.data.maintenance) {
+            selectRecord(res.data.maintenance);
+          }
         }
+      } catch (err) {
+        alert(err.response?.data?.message || 'Failed to submit for audit');
+      } finally {
+        setCompleting(false);
       }
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to complete maintenance');
-    } finally {
-      setCompleting(false);
+    } else {
+      // Admin approving and completing
+      const confirmMsg = isComplaint
+        ? `Approve audit and complete corrective maintenance? This will resolve complaint ${selectedRecord.complaint.complaintId || ''} and return the equipment to Working status everywhere.`
+        : 'Approve audit and mark this maintenance as Completed everywhere? Equipment will return to Working status.';
+
+      if (!window.confirm(confirmMsg)) return;
+
+      setCompleting(true);
+      try {
+        const res = await maintenanceAPI.update(selectedRecord._id, {
+          status: 'Completed',
+          completedDate: new Date(),
+          nextServiceDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        });
+        if (res.data.success) {
+          alert(
+            isComplaint
+              ? `Maintenance audit approved! Complaint ${selectedRecord.complaint.complaintId || ''} is now Resolved and equipment is back to Working.`
+              : 'Maintenance audit approved & Completed! Equipment returned to Working status everywhere.'
+          );
+          await loadRecords();
+          if (res.data.maintenance) {
+            selectRecord(res.data.maintenance);
+          }
+        }
+      } catch (err) {
+        alert(err.response?.data?.message || 'Failed to complete maintenance');
+      } finally {
+        setCompleting(false);
+      }
     }
   };
 
@@ -609,6 +641,7 @@ export default function MaintenanceChecklist() {
               <div className="flex items-center gap-2">
                 <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${
                   selectedRecord.status === 'Completed' ? 'bg-emerald-500/30 text-emerald-100' :
+                  selectedRecord.status === 'Pending Admin Audit' ? 'bg-purple-500/40 text-purple-100 border border-purple-300/40 font-bold' :
                   selectedRecord.status === 'In Progress' ? 'bg-white/20 text-white' :
                   selectedRecord.status === 'Overdue' ? 'bg-red-500/30 text-red-100' :
                   'bg-white/20 text-white'
@@ -616,12 +649,40 @@ export default function MaintenanceChecklist() {
                 {selectedRecord.status !== 'Completed' && (
                   <button
                     onClick={completeMaintenanceRecord}
-                    disabled={completing}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-white rounded-lg text-xs font-bold transition-all shadow-sm disabled:opacity-50"
-                    title={selectedRecord.complaint ? 'Resolve complaint and mark completed' : 'Mark maintenance as completed'}
+                    disabled={completing || (isEngineer && selectedRecord.status === 'Pending Admin Audit')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm disabled:opacity-75 ${
+                      isEngineer
+                        ? selectedRecord.status === 'Pending Admin Audit'
+                          ? 'bg-purple-600/80 text-white cursor-default'
+                          : 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-900/20'
+                        : 'bg-emerald-500 hover:bg-emerald-400 text-white'
+                    }`}
+                    title={
+                      isEngineer
+                        ? selectedRecord.status === 'Pending Admin Audit'
+                          ? 'Submitted to Admin — awaiting audit approval'
+                          : 'Send completed checklist for Admin Audit'
+                        : 'Audit technician checklist and mark Completed everywhere'
+                    }
                   >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    <span>{completing ? 'Completing...' : selectedRecord.complaint ? 'Resolve & Complete' : 'Complete'}</span>
+                    {isEngineer ? (
+                      selectedRecord.status === 'Pending Admin Audit' ? (
+                        <>
+                          <Clock className="h-3.5 w-3.5" />
+                          <span>Audit Pending</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-3.5 w-3.5" />
+                          <span>{completing ? 'Sending...' : 'Send for Admin Audit'}</span>
+                        </>
+                      )
+                    ) : (
+                      <>
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span>{completing ? 'Approving...' : selectedRecord.status === 'Pending Admin Audit' ? 'Audit & Approve Complete' : 'Approve & Complete'}</span>
+                      </>
+                    )}
                   </button>
                 )}
               </div>

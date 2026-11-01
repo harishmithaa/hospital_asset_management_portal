@@ -165,8 +165,16 @@ exports.updateMaintenance = async (req, res) => {
       spareParts
     } = req.body;
 
-    if (status) record.status = status;
-    if (completedDate) record.completedDate = completedDate;
+    const isTech = req.user.role === 'Technician' || req.user.role === 'Biomedical Engineer';
+    let targetStatus = status;
+
+    // Technicians cannot mark as Completed alone — redirect to 'Pending Admin Audit'
+    if (isTech && targetStatus === 'Completed') {
+      targetStatus = 'Pending Admin Audit';
+    }
+
+    if (targetStatus) record.status = targetStatus;
+    if (completedDate && (req.user.role === 'Admin' || targetStatus === 'Completed')) record.completedDate = completedDate;
     if (workDescription !== undefined) record.workDescription = workDescription;
     if (partsReplaced !== undefined) record.partsReplaced = partsReplaced;
     if (cost !== undefined) record.cost = cost;
@@ -201,7 +209,7 @@ exports.updateMaintenance = async (req, res) => {
       try { record.spareParts = typeof spareParts === 'string' ? JSON.parse(spareParts) : spareParts; } catch (e) {}
     }
 
-    // Handle file upload for service report (Bug #1 Fix: route uses upload.fields(), so files are in req.files not req.file)
+    // Handle file upload for service report
     if (req.files && req.files['reportPath'] && req.files['reportPath'][0]) {
       record.reportPath = `/uploads/${req.files['reportPath'][0].filename}`;
     } else if (reportPath !== undefined) {
@@ -210,27 +218,64 @@ exports.updateMaintenance = async (req, res) => {
 
     await record.save();
 
-    // When maintenance is COMPLETED — update equipment fields
+    // CASE 1: Technician sent maintenance for Admin Audit
+    if (record.status === 'Pending Admin Audit') {
+      const equipment = await Equipment.findById(record.equipment);
+
+      // Sync linked complaint to 'Pending Admin Audit'
+      if (record.complaint) {
+        const comp = await Complaint.findById(record.complaint);
+        if (comp && !['Completed', 'Closed'].includes(comp.status)) {
+          comp.status = 'Pending Admin Audit';
+          comp.updates.push({
+            status: 'Pending Admin Audit',
+            note: `Technician ${req.user.name} submitted maintenance checklist and parts log for Admin Audit.`,
+            updatedBy: req.user._id
+          });
+          await comp.save();
+        }
+      }
+
+      // Notify all Admins
+      const adminUsers = await User.find({ role: 'Admin' });
+      for (const admin of adminUsers) {
+        await Notification.create({
+          user: admin._id,
+          title: 'Audit Required: Maintenance Submitted by Technician',
+          message: `Technician ${req.user.name} completed maintenance checklist for ${equipment?.name || 'Equipment'} (${equipment?.equipmentId || ''}). Sent for Admin Audit.`,
+          category: 'Warning'
+        });
+      }
+    }
+
+    // CASE 2: Admin completed maintenance audit
     if (record.status === 'Completed') {
+      if (!record.completedDate) {
+        record.completedDate = new Date();
+        await record.save();
+      }
+
       const equipment = await Equipment.findById(record.equipment);
       if (equipment) {
         equipment.lastMaintenanceDate = record.completedDate || new Date();
         if (record.nextServiceDate) {
           equipment.nextMaintenanceDate = record.nextServiceDate;
         }
-        // Restore to Working if it was Under Maintenance
-        if (equipment.currentStatus === 'Under Maintenance') {
+        // Restore to Working if it was Under Maintenance or Out of Service
+        if (equipment.currentStatus === 'Under Maintenance' || equipment.currentStatus === 'Out of Service') {
           equipment.currentStatus = 'Working';
         }
         await equipment.save();
 
-        // Notify admin that maintenance is complete
-        await Notification.create({
-          role: 'Admin',
-          title: 'Maintenance Completed',
-          message: `Maintenance completed for ${equipment.name} (${equipment.equipmentId}). Equipment is back to Working status.`,
-          category: 'Success'
-        });
+        // Notify technician that maintenance audit was approved
+        if (record.engineer) {
+          await Notification.create({
+            user: record.engineer,
+            title: 'Maintenance Audit Approved',
+            message: `Admin ${req.user.name} approved and completed maintenance for ${equipment.name} (${equipment.equipmentId}).`,
+            category: 'Success'
+          });
+        }
       }
 
       // If this maintenance was for a complaint, automatically mark the complaint as Completed
@@ -240,7 +285,7 @@ exports.updateMaintenance = async (req, res) => {
           comp.status = 'Completed';
           comp.updates.push({
             status: 'Completed',
-            note: 'Corrective maintenance checklist completed and spare parts logged by technician.',
+            note: `Admin approved maintenance audit and marked completed everywhere.`,
             updatedBy: req.user._id
           });
           await comp.save();
@@ -248,8 +293,8 @@ exports.updateMaintenance = async (req, res) => {
           if (comp.raisedBy) {
             await Notification.create({
               user: comp.raisedBy,
-              title: 'Complaint Resolved',
-              message: `Your complaint ${comp.complaintId} has been resolved. Maintenance checklist completed and verified.`,
+              title: 'Complaint Resolved & Verified',
+              message: `Your complaint ${comp.complaintId} has been resolved and verified by Admin. Equipment is back to Working status.`,
               category: 'Success'
             });
           }
