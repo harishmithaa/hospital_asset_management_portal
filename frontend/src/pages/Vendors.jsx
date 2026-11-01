@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { vendorAPI } from '../services/api';
 import { useForm } from 'react-hook-form';
-import { Briefcase, Star, Plus, Edit2, Trash2, Mail, Phone, MapPin, X } from 'lucide-react';
+import { Briefcase, Plus, Edit2, Trash2, Mail, Phone, MapPin, X } from 'lucide-react';
 
 export default function Vendors() {
   const { user } = useAuth();
@@ -53,7 +53,6 @@ export default function Vendors() {
     setValue('address', v.address);
     setValue('gstNumber', v.gstNumber);
     setValue('specialization', v.specialization);
-    setValue('rating', v.rating);
     setValue('status', v.status);
   };
 
@@ -153,15 +152,6 @@ export default function Vendors() {
                 </div>
               </div>
             </div>
-
-            {/* Performance ratings */}
-            <div className="border-t border-slate-100 dark:border-slate-800/80 pt-4 mt-5 flex items-center justify-between text-xs">
-              <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Vendor Score:</span>
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
-                <span className="font-bold text-slate-700 dark:text-slate-200">{v.rating || '5.0'} / 5.0</span>
-              </div>
-            </div>
           </div>
         ))}
       </div>
@@ -211,11 +201,6 @@ export default function Vendors() {
               <div>
                 <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1">Specialization Speciality *</label>
                 <input type="text" {...register('specialization', { required: true })} className="input-field py-1.5" placeholder="e.g. Life Support, Imaging" required />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1">Rating Rating (0 - 5)</label>
-                <input type="number" step="0.1" min="0" max="5" {...register('rating')} className="input-field py-1.5" />
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
