@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { equipmentAPI, complaintAPI } from '../../services/api';
-import { Plus, CheckCircle, AlertCircle } from 'lucide-react';
+import { Plus, CheckCircle, AlertCircle, QrCode, X, Building2, MapPin } from 'lucide-react';
+import QRScannerModal from '../../components/QRScannerModal';
 
 export default function RaiseComplaint() {
   const { user } = useAuth();
@@ -12,6 +13,8 @@ export default function RaiseComplaint() {
 
   const [equipment, setEquipment] = useState([]);
   const [form, setForm] = useState({ equipment: paramEquipmentId, issueDescription: '', priority: 'Medium', additionalNotes: '' });
+  const [scannedEquipment, setScannedEquipment] = useState(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [image, setImage] = useState(null);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
@@ -22,12 +25,30 @@ export default function RaiseComplaint() {
       if (r.data.success) {
         setEquipment(r.data.equipment);
         if (paramEquipmentId) {
-          // Verify or set
           setForm(f => ({ ...f, equipment: paramEquipmentId }));
+          const match = r.data.equipment.find(e => e._id === paramEquipmentId);
+          if (match) setScannedEquipment(match);
         }
       }
     });
   }, [paramEquipmentId]);
+
+  useEffect(() => {
+    if (form.equipment && equipment.length > 0) {
+      const match = equipment.find(e => e._id === form.equipment);
+      if (match) setScannedEquipment(match);
+    } else if (!form.equipment) {
+      setScannedEquipment(null);
+    }
+  }, [form.equipment, equipment]);
+
+  const handleScanComplete = (scannedEq) => {
+    if (scannedEq) {
+      setForm(f => ({ ...f, equipment: scannedEq._id }));
+      setScannedEquipment(scannedEq);
+      setScannerOpen(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,6 +61,7 @@ export default function RaiseComplaint() {
       const res = await complaintAPI.create(formData);
       setSuccess(`Complaint ${res.data.complaint?.complaintId} raised successfully! Our technical team has been notified.`);
       setForm({ equipment: '', issueDescription: '', priority: 'Medium', additionalNotes: '' });
+      setScannedEquipment(null);
       setImage(null);
     } catch (err) { setError(err.response?.data?.message || 'Failed to raise complaint'); }
     finally { setSaving(false); }
@@ -77,16 +99,80 @@ export default function RaiseComplaint() {
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs font-medium">{error}</div>}
 
-          {/* Equipment Selection */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Equipment *</label>
+          {/* Equipment Selection + QR Scan Action */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-semibold text-slate-700">
+                Equipment with Issue *
+              </label>
+              <button
+                type="button"
+                onClick={() => setScannerOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs active:scale-95"
+              >
+                <QrCode className="h-3.5 w-3.5" />
+                <span>Scan Equipment QR Tag</span>
+              </button>
+            </div>
+
+            {/* Visual Confirmation Card when Equipment is Scanned/Selected */}
+            {scannedEquipment && (
+              <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-xl flex items-center justify-between gap-3 animate-in fade-in duration-200">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-10 w-10 bg-white border border-blue-150 rounded-xl flex items-center justify-center text-blue-600 flex-shrink-0 shadow-xs">
+                    <QrCode className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="text-xs font-bold text-slate-800">{scannedEquipment.name}</h4>
+                      <span className="text-[10px] font-mono font-bold text-blue-700 bg-white px-1.5 py-0.5 rounded border border-blue-200">
+                        {scannedEquipment.equipmentId}
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        scannedEquipment.currentStatus === 'Working' ? 'bg-emerald-100 text-emerald-800' :
+                        scannedEquipment.currentStatus === 'Under Maintenance' ? 'bg-amber-100 text-amber-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {scannedEquipment.currentStatus}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-1 text-[11px] text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <Building2 className="h-3 w-3 text-slate-400" />
+                        {scannedEquipment.department?.name || 'Department'}
+                      </span>
+                      {scannedEquipment.roomNumber && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3 text-slate-400" />
+                          Room {scannedEquipment.roomNumber}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { set('equipment', ''); setScannedEquipment(null); }}
+                  className="text-slate-400 hover:text-slate-600 p-1.5 rounded-md hover:bg-blue-100/60 transition-colors"
+                  title="Clear / Change equipment"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+
             <select
               value={form.equipment}
-              onChange={e => set('equipment', e.target.value)}
+              onChange={e => {
+                const val = e.target.value;
+                set('equipment', val);
+                const match = equipment.find(eq => eq._id === val);
+                setScannedEquipment(match || null);
+              }}
               className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none bg-white"
               required
             >
-              <option value="">Select the equipment with the issue</option>
+              <option value="">Select equipment or scan QR above</option>
               {equipment.map(e => (
                 <option key={e._id} value={e._id}>
                   {e.name} — {e.equipmentId} ({e.currentStatus})
@@ -192,6 +278,12 @@ export default function RaiseComplaint() {
           <li>Track your complaint status in "My Complaints"</li>
         </ul>
       </div>
+      {/* QR Scanner Modal */}
+      <QRScannerModal
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScanComplete={handleScanComplete}
+      />
     </div>
   );
 }

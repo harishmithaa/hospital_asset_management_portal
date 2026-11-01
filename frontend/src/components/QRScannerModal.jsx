@@ -5,7 +5,7 @@ import { QrCode, X, Search, Camera, CheckCircle2, AlertCircle, ArrowRight, Exter
 import { equipmentAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
-export default function QRScannerModal({ isOpen, onClose }) {
+export default function QRScannerModal({ isOpen, onClose, onScanComplete }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('camera'); // 'camera' | 'search'
@@ -241,16 +241,26 @@ export default function QRScannerModal({ isOpen, onClose }) {
 
     const urlMatch = targetId.match(/\/equipment\/([^/?#\s]+)/i);
     if (urlMatch) {
-      // Direct URL format — navigate immediately
+      const matchedId = urlMatch[1];
+      if (onScanComplete) {
+        try {
+          const single = await equipmentAPI.getById(matchedId);
+          if (single.data.success && single.data.equipment) {
+            setLoadingEq(false);
+            onScanComplete(single.data.equipment);
+            onClose();
+            return;
+          }
+        } catch (_) {}
+      }
       setLoadingEq(false);
       onClose();
-      navigate(`/equipment/${urlMatch[1]}`);
+      navigate(`/equipment/${matchedId}`);
       return;
     }
 
-    if (targetId.startsWith('HAMS-EQ-')) {
-      targetId = targetId.replace('HAMS-EQ-', '');
-    }
+    // Strip HAMS-EQ: or HAMS-EQ- prefixes
+    targetId = targetId.replace(/^HAMS-EQ[:-]/i, '');
 
     try {
       // Try direct fetch by ObjectId first
@@ -258,6 +268,11 @@ export default function QRScannerModal({ isOpen, onClose }) {
         const single = await equipmentAPI.getById(targetId);
         if (single.data.success && single.data.equipment) {
           setLoadingEq(false);
+          if (onScanComplete) {
+            onScanComplete(single.data.equipment);
+            onClose();
+            return;
+          }
           onClose();
           navigate(`/equipment/${single.data.equipment._id}`);
           return;
@@ -274,6 +289,11 @@ export default function QRScannerModal({ isOpen, onClose }) {
         );
         if (found) {
           setLoadingEq(false);
+          if (onScanComplete) {
+            onScanComplete(found);
+            onClose();
+            return;
+          }
           onClose();
           navigate(`/equipment/${found._id}`);
           return;
@@ -292,6 +312,11 @@ export default function QRScannerModal({ isOpen, onClose }) {
   };
 
   const handleSelectEquipment = (eq) => {
+    if (onScanComplete) {
+      onScanComplete(eq);
+      onClose();
+      return;
+    }
     // Manual selection from list → navigate directly
     onClose();
     navigate(`/equipment/${eq._id}`);
