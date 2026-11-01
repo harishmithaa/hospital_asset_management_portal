@@ -124,7 +124,7 @@ export default function MyComplaints() {
                   <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{c.issueDescription}</p>
                   <div className="mt-2 flex items-center gap-4 text-xs text-slate-400">
                     <span>Raised: {new Date(c.createdAt).toLocaleDateString()}</span>
-                    {c.assignedEngineer && <span>Engineer: {c.assignedEngineer.name}</span>}
+                    {c.assignedEngineer && <span>Technician: {c.assignedEngineer.name}</span>}
                   </div>
                 </div>
                 <button onClick={() => navigate(`/equipment/${c.equipment?._id}`)} className="flex-shrink-0 p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">

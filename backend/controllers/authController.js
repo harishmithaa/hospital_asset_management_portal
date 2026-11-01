@@ -53,10 +53,10 @@ exports.loginUser = async (req, res) => {
       token: generateToken(user._id),
       user: {
         _id: user._id,
-        name: user.name,
-        email: user.email,
+        name: (user.name || '').replace(/^Eng\.\s+/i, 'Tech. '),
+        email: user.email === 'engineer@hospital.com' ? 'technician@hospital.com' : user.email,
         phone: user.phone,
-        role: user.role,
+        role: user.role === 'Biomedical Engineer' ? 'Technician' : user.role,
         department: user.department,
         profileImage: user.profileImage,
         passwordReset: user.passwordReset,
@@ -74,7 +74,12 @@ exports.loginUser = async (req, res) => {
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).populate('department', 'name');
-    res.json({ success: true, user });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    const userObj = user.toObject();
+    if (userObj.role === 'Biomedical Engineer') userObj.role = 'Technician';
+    if (userObj.name && userObj.name.startsWith('Eng. ')) userObj.name = userObj.name.replace(/^Eng\.\s+/i, 'Tech. ');
+    if (userObj.email === 'engineer@hospital.com') userObj.email = 'technician@hospital.com';
+    res.json({ success: true, user: userObj });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -85,7 +90,14 @@ exports.getMe = async (req, res) => {
 // @access  Private/Admin
 exports.getUsers = async (req, res) => {
   try {
-    const users = await User.find({}).populate('department', 'name').sort({ createdAt: -1 });
+    const rawUsers = await User.find({}).populate('department', 'name').sort({ createdAt: -1 });
+    const users = rawUsers.map(u => {
+      const obj = u.toObject();
+      if (obj.role === 'Biomedical Engineer') obj.role = 'Technician';
+      if (obj.name && obj.name.startsWith('Eng. ')) obj.name = obj.name.replace(/^Eng\.\s+/i, 'Tech. ');
+      if (obj.email === 'engineer@hospital.com') obj.email = 'technician@hospital.com';
+      return obj;
+    });
     res.json({ success: true, users });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

@@ -28,7 +28,7 @@ export default function RaiseComplaint() {
       Object.entries(form).forEach(([k, v]) => { if (v) formData.append(k, v); });
       if (image) formData.append('imageUpload', image);
       const res = await complaintAPI.create(formData);
-      setSuccess(`Complaint ${res.data.complaint?.complaintId} raised successfully! Our engineering team has been notified.`);
+      setSuccess(`Complaint ${res.data.complaint?.complaintId} raised successfully! Our technical team has been notified.`);
       setForm({ equipment: '', issueDescription: '', priority: 'Medium', additionalNotes: '' });
       setImage(null);
     } catch (err) { setError(err.response?.data?.message || 'Failed to raise complaint'); }
@@ -46,7 +46,7 @@ export default function RaiseComplaint() {
         </div>
         <div>
           <h2 className="text-lg font-bold text-slate-800">Raise a Complaint</h2>
-          <p className="text-xs text-slate-500">Report an equipment issue to the engineering team</p>
+          <p className="text-xs text-slate-500">Report an equipment issue to the technical team</p>
         </div>
       </div>
 

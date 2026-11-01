@@ -46,10 +46,10 @@ export default function Users() {
     setSelectedId(u._id);
     setModalOpen(true);
 
-    setValue('name', u.name);
-    setValue('email', u.email);
+    setValue('name', (u.name || '').replace(/^Eng\.\s+/i, 'Tech. '));
+    setValue('email', u.email === 'engineer@hospital.com' ? 'technician@hospital.com' : u.email);
     setValue('phone', u.phone);
-    setValue('role', u.role);
+    setValue('role', u.role === 'Biomedical Engineer' ? 'Technician' : u.role);
     setValue('department', u.department?._id || '');
     setValue('status', u.status);
     setValue('password', ''); // Blank by default, only set if changing
@@ -112,7 +112,7 @@ export default function Users() {
       
       {/* Top Banner controls */}
       <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
-        <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Manage directory of system administrators, engineers, staff and vendor reps</span>
+        <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Manage directory of system administrators, technicians, staff and vendor reps</span>
         <button onClick={handleOpenCreate} className="btn-primary py-2 px-3 text-xs bg-medical-500 hover:bg-medical-600">
           <Plus className="h-4 w-4" /> Create User
         </button>
@@ -120,44 +120,49 @@ export default function Users() {
 
       {/* Grid of accounts */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {users.map((u) => (
-          <div key={u._id} className="glass-card border border-slate-100 dark:border-slate-800 flex flex-col justify-between p-6">
-            <div>
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-full overflow-hidden border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-50">
-                    {u.profileImage ? (
-                      <img src={getFileUrl(u.profileImage)} alt="Profile" className="object-cover h-full w-full" />
-                    ) : (
-                      <User className="h-6 w-6 text-slate-400" />
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-800 dark:text-white text-sm">{u.name}</h3>
-                    <span className="text-[10px] text-slate-400 font-bold block capitalize">{u.role}</span>
-                  </div>
-                </div>
-                
-                <div className="flex gap-1">
-                  <button onClick={() => handleOpenEdit(u)} className="p-1 text-slate-400 hover:text-blue-650 rounded">
-                    <Edit2 className="h-4 w-4" />
-                  </button>
-                  <button onClick={() => handleDelete(u._id, u.name)} className="p-1 text-slate-400 hover:text-red-655 rounded">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
+        {users.map((u) => {
+          const displayName = (u.name || '').replace(/^Eng\.\s+/i, 'Tech. ');
+          const displayRole = u.role === 'Biomedical Engineer' ? 'Technician' : u.role;
+          const displayEmail = u.email === 'engineer@hospital.com' ? 'technician@hospital.com' : u.email;
 
-              {/* details */}
-              <div className="space-y-2 mt-5 text-xs font-semibold text-slate-600 dark:text-slate-400 border-t border-slate-100 dark:border-slate-850 pt-4">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Email:</span>
-                  <span className="text-slate-750 dark:text-slate-350">{u.email}</span>
+          return (
+            <div key={u._id} className="glass-card border border-slate-100 dark:border-slate-800 flex flex-col justify-between p-6">
+              <div>
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-full overflow-hidden border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-50">
+                      {u.profileImage ? (
+                        <img src={getFileUrl(u.profileImage)} alt="Profile" className="object-cover h-full w-full" />
+                      ) : (
+                        <User className="h-6 w-6 text-slate-400" />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-800 dark:text-white text-sm">{displayName}</h3>
+                      <span className="text-[10px] text-slate-400 font-bold block capitalize">{displayRole}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-1">
+                    <button onClick={() => handleOpenEdit(u)} className="p-1 text-slate-400 hover:text-blue-650 rounded">
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => handleDelete(u._id, displayName)} className="p-1 text-slate-400 hover:text-red-655 rounded">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Phone:</span>
-                  <span className="text-slate-750 dark:text-slate-350">{u.phone || 'N/A'}</span>
-                </div>
+
+                {/* details */}
+                <div className="space-y-2 mt-5 text-xs font-semibold text-slate-600 dark:text-slate-400 border-t border-slate-100 dark:border-slate-850 pt-4">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Email:</span>
+                    <span className="text-slate-750 dark:text-slate-350">{displayEmail}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Phone:</span>
+                    <span className="text-slate-750 dark:text-slate-350">{u.phone || 'N/A'}</span>
+                  </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Wards Dept:</span>
                   <span className="text-slate-755 dark:text-slate-355">{u.department?.name || 'All Hospital'}</span>
@@ -173,8 +178,9 @@ export default function Users() {
               }`}>{u.status}</span>
             </div>
           </div>
-        ))}
-      </div>
+        );
+      })}
+    </div>
 
       {/* User Create Modal */}
       {modalOpen && (

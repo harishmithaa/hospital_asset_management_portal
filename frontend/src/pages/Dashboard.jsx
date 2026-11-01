@@ -529,7 +529,7 @@ function StaffDashboard() {
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-6 flex items-center justify-between text-white">
         <div>
           <h3 className="font-bold text-lg">Report an Equipment Issue</h3>
-          <p className="text-blue-100 text-sm mt-1">Quickly report any equipment malfunction to the engineering team</p>
+          <p className="text-blue-100 text-sm mt-1">Quickly report any equipment malfunction to the technical team</p>
         </div>
         <button
           onClick={() => navigate('/raise-complaint')}
