@@ -253,38 +253,109 @@ exports.updateComplaint = async (req, res) => {
           updatedBy: req.user._id
         });
 
-        // Case 1: Technician sends for Admin Audit
-        if (targetStatus === 'Pending Admin Audit') {
-          // Sync linked Maintenance to 'Pending Admin Audit'
-          const linkedMaint = await Maintenance.findOne({ complaint: complaint._id });
-          if (linkedMaint && linkedMaint.status !== 'Completed') {
-            linkedMaint.status = 'Pending Admin Audit';
+        const equip = await Equipment.findById(complaint.equipment);
+        const linkedMaint = await Maintenance.findOne({ complaint: complaint._id });
+        const adminUsers = await User.find({ role: 'Admin' });
+        const deptStaffUsers = complaint.department
+          ? await User.find({ role: 'Department Staff', department: complaint.department })
+          : [];
+
+        // CASE 1: In Progress, Waiting for Parts/Vendor, or Pending Admin Audit
+        if (['In Progress', 'Waiting for Parts', 'Waiting for Vendor', 'Pending Admin Audit'].includes(targetStatus)) {
+          // Update equipment status to Under Maintenance
+          if (equip && equip.currentStatus !== 'Under Maintenance') {
+            equip.currentStatus = 'Under Maintenance';
+            await equip.save();
+          }
+
+          // Sync linked maintenance status
+          if (linkedMaint && !['Completed', 'Cancelled'].includes(linkedMaint.status)) {
+            linkedMaint.status = targetStatus === 'Pending Admin Audit' ? 'Pending Admin Audit' : 'In Progress';
             await linkedMaint.save();
           }
 
-          // Notify all Admins that technician completed work and ticket is ready for audit
-          const adminUsers = await User.find({ role: 'Admin' });
-          const equip = await Equipment.findById(complaint.equipment);
-          for (const admin of adminUsers) {
-            await Notification.create({
-              user: admin._id,
-              title: 'Audit Required: Complaint Completed by Technician',
-              message: `Technician ${req.user.name} completed work on complaint ${complaint.complaintId} (${equip?.name || 'Equipment'}). Sent for Admin Audit.`,
-              category: 'Warning'
-            });
+          if (targetStatus === 'In Progress' || targetStatus === 'Waiting for Parts' || targetStatus === 'Waiting for Vendor') {
+            // Notify all Admins
+            for (const admin of adminUsers) {
+              await Notification.create({
+                user: admin._id,
+                title: `Complaint ${targetStatus}: ${equip?.name || 'Equipment'}`,
+                message: `Technician ${req.user.name} changed status of complaint ${complaint.complaintId} (${equip?.name || 'Equipment'}) to ${targetStatus}. Equipment is now Under Maintenance.`,
+                category: 'Info'
+              });
+            }
+
+            // Notify staff member who raised it
+            if (complaint.raisedBy) {
+              await Notification.create({
+                user: complaint.raisedBy,
+                title: `Service ${targetStatus}: ${equip?.name || 'Equipment'}`,
+                message: `Technician ${req.user.name} updated your complaint ${complaint.complaintId} (${equip?.name || 'Equipment'}) to ${targetStatus}. Note: ${statusNote}`,
+                category: 'Info'
+              });
+            }
+
+            // Notify all other staff in that department
+            for (const staff of deptStaffUsers) {
+              if (complaint.raisedBy && staff._id.toString() === complaint.raisedBy.toString()) continue;
+              await Notification.create({
+                user: staff._id,
+                title: `Department Equipment ${targetStatus}: ${equip?.name || 'Equipment'}`,
+                message: `Technician ${req.user.name} updated complaint ${complaint.complaintId} for ${equip?.name} (${equip?.equipmentId || ''}) to ${targetStatus}. Equipment is Under Maintenance.`,
+                category: 'Warning'
+              });
+            }
+          } else if (targetStatus === 'Pending Admin Audit') {
+            // Technician sends for Admin Audit
+            for (const admin of adminUsers) {
+              await Notification.create({
+                user: admin._id,
+                title: 'Audit Required: Complaint Completed by Technician',
+                message: `Technician ${req.user.name} completed work on complaint ${complaint.complaintId} (${equip?.name || 'Equipment'}). Sent for Admin Audit.`,
+                category: 'Warning'
+              });
+            }
+
+            if (complaint.raisedBy) {
+              await Notification.create({
+                user: complaint.raisedBy,
+                title: 'Work Completed: Sent for Admin Audit',
+                message: `Technician ${req.user.name} completed repair work on ${equip?.name || 'Equipment'} for complaint ${complaint.complaintId}. Submitted for final Admin verification.`,
+                category: 'Info'
+              });
+            }
+
+            for (const staff of deptStaffUsers) {
+              if (complaint.raisedBy && staff._id.toString() === complaint.raisedBy.toString()) continue;
+              await Notification.create({
+                user: staff._id,
+                title: `Service Completed: ${equip?.name || 'Equipment'}`,
+                message: `Technician ${req.user.name} finished repair on ${equip?.name} (${equip?.equipmentId || ''}). Sent for Admin Audit.`,
+                category: 'Info'
+              });
+            }
           }
         }
 
-        // Case 2: Admin approves and marks as Completed / Closed
+        // CASE 2: Admin approves and marks as Completed / Closed
         if (targetStatus === 'Completed' || targetStatus === 'Closed') {
-          const equip = await Equipment.findById(complaint.equipment);
-          if (equip && (equip.currentStatus === 'Under Maintenance' || equip.currentStatus === 'Out of Service')) {
+          // Check if any other unresolved complaints or open maintenance exist for this equipment
+          const otherComplaints = await Complaint.countDocuments({
+            equipment: complaint.equipment,
+            _id: { $ne: complaint._id },
+            status: { $nin: ['Completed', 'Closed', 'Cancelled'] }
+          });
+          const otherMaint = await Maintenance.countDocuments({
+            equipment: complaint.equipment,
+            status: { $nin: ['Completed', 'Cancelled'] }
+          });
+
+          if (equip && otherComplaints === 0 && otherMaint === 0) {
             equip.currentStatus = 'Working';
             await equip.save();
           }
 
           // Mark linked maintenance as Completed
-          const linkedMaint = await Maintenance.findOne({ complaint: complaint._id });
           if (linkedMaint && linkedMaint.status !== 'Completed') {
             linkedMaint.status = 'Completed';
             linkedMaint.completedDate = new Date();
@@ -292,12 +363,25 @@ exports.updateComplaint = async (req, res) => {
           }
 
           // Notify the staff member who raised it
-          await Notification.create({
-            user: complaint.raisedBy,
-            title: 'Complaint Resolved & Verified',
-            message: `Your complaint ${complaint.complaintId} has been verified and marked as ${targetStatus}. Equipment is back in service.`,
-            category: 'Success'
-          });
+          if (complaint.raisedBy) {
+            await Notification.create({
+              user: complaint.raisedBy,
+              title: 'Complaint Resolved & Verified',
+              message: `Your complaint ${complaint.complaintId} has been verified and marked as ${targetStatus}. Equipment is back in service.`,
+              category: 'Success'
+            });
+          }
+
+          // Notify all department staff
+          for (const staff of deptStaffUsers) {
+            if (complaint.raisedBy && staff._id.toString() === complaint.raisedBy.toString()) continue;
+            await Notification.create({
+              user: staff._id,
+              title: `Equipment Returned to Service: ${equip?.name || 'Equipment'}`,
+              message: `Complaint ${complaint.complaintId} on ${equip?.name} (${equip?.equipmentId || ''}) has been verified & resolved. Equipment is back to Working status.`,
+              category: 'Success'
+            });
+          }
 
           // Notify technician that work was audited and approved
           if (complaint.assignedEngineer) {

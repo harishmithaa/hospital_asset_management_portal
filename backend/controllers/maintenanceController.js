@@ -218,9 +218,59 @@ exports.updateMaintenance = async (req, res) => {
 
     await record.save();
 
-    // CASE 1: Technician sent maintenance for Admin Audit
+    const equipment = await Equipment.findById(record.equipment);
+    const adminUsers = await User.find({ role: 'Admin' });
+    const deptStaffUsers = equipment?.department
+      ? await User.find({ role: 'Department Staff', department: equipment.department })
+      : [];
+
+    // CASE 1: In Progress
+    if (record.status === 'In Progress') {
+      if (equipment && equipment.currentStatus !== 'Under Maintenance') {
+        equipment.currentStatus = 'Under Maintenance';
+        await equipment.save();
+      }
+
+      if (record.complaint) {
+        const comp = await Complaint.findById(record.complaint);
+        if (comp && !['Completed', 'Closed'].includes(comp.status)) {
+          comp.status = 'In Progress';
+          comp.updates.push({
+            status: 'In Progress',
+            note: `Technician ${req.user.name} started maintenance work. Status: In Progress.`,
+            updatedBy: req.user._id
+          });
+          await comp.save();
+        }
+      }
+
+      // Notify all Admins
+      for (const admin of adminUsers) {
+        await Notification.create({
+          user: admin._id,
+          title: `Maintenance In Progress: ${equipment?.name || 'Equipment'}`,
+          message: `Technician ${req.user.name} set maintenance on ${equipment?.name} (${equipment?.equipmentId || ''}) to In Progress. Equipment is now Under Maintenance.`,
+          category: 'Info'
+        });
+      }
+
+      // Notify Department Staff
+      for (const staff of deptStaffUsers) {
+        await Notification.create({
+          user: staff._id,
+          title: `Equipment Maintenance In Progress: ${equipment?.name || 'Equipment'}`,
+          message: `Technician ${req.user.name} is performing maintenance on ${equipment?.name} (${equipment?.equipmentId || ''}) in your department. Status: In Progress.`,
+          category: 'Warning'
+        });
+      }
+    }
+
+    // CASE 2: Technician sent maintenance for Admin Audit
     if (record.status === 'Pending Admin Audit') {
-      const equipment = await Equipment.findById(record.equipment);
+      if (equipment && equipment.currentStatus !== 'Under Maintenance') {
+        equipment.currentStatus = 'Under Maintenance';
+        await equipment.save();
+      }
 
       // Sync linked complaint to 'Pending Admin Audit'
       if (record.complaint) {
@@ -237,7 +287,6 @@ exports.updateMaintenance = async (req, res) => {
       }
 
       // Notify all Admins
-      const adminUsers = await User.find({ role: 'Admin' });
       for (const admin of adminUsers) {
         await Notification.create({
           user: admin._id,
@@ -246,23 +295,43 @@ exports.updateMaintenance = async (req, res) => {
           category: 'Warning'
         });
       }
+
+      // Notify Department Staff
+      for (const staff of deptStaffUsers) {
+        await Notification.create({
+          user: staff._id,
+          title: `Maintenance Submitted for Audit: ${equipment?.name || 'Equipment'}`,
+          message: `Technician ${req.user.name} finished checklist on ${equipment?.name} (${equipment?.equipmentId || ''}). Sent for Admin Audit.`,
+          category: 'Info'
+        });
+      }
     }
 
-    // CASE 2: Admin completed maintenance audit
+    // CASE 3: Admin completed maintenance audit
     if (record.status === 'Completed') {
       if (!record.completedDate) {
         record.completedDate = new Date();
         await record.save();
       }
 
-      const equipment = await Equipment.findById(record.equipment);
       if (equipment) {
         equipment.lastMaintenanceDate = record.completedDate || new Date();
         if (record.nextServiceDate) {
           equipment.nextMaintenanceDate = record.nextServiceDate;
         }
-        // Restore to Working if it was Under Maintenance or Out of Service
-        if (equipment.currentStatus === 'Under Maintenance' || equipment.currentStatus === 'Out of Service') {
+
+        const otherComplaints = await Complaint.countDocuments({
+          equipment: record.equipment,
+          status: { $nin: ['Completed', 'Closed', 'Cancelled'] }
+        });
+        const otherMaint = await Maintenance.countDocuments({
+          equipment: record.equipment,
+          _id: { $ne: record._id },
+          status: { $nin: ['Completed', 'Cancelled'] }
+        });
+
+        // Restore to Working if no other ongoing issues
+        if (otherComplaints === 0 && otherMaint === 0) {
           equipment.currentStatus = 'Working';
         }
         await equipment.save();
@@ -273,6 +342,16 @@ exports.updateMaintenance = async (req, res) => {
             user: record.engineer,
             title: 'Maintenance Audit Approved',
             message: `Admin ${req.user.name} approved and completed maintenance for ${equipment.name} (${equipment.equipmentId}).`,
+            category: 'Success'
+          });
+        }
+
+        // Notify Department Staff
+        for (const staff of deptStaffUsers) {
+          await Notification.create({
+            user: staff._id,
+            title: `Maintenance Approved & Completed: ${equipment.name}`,
+            message: `Admin ${req.user.name} approved maintenance on ${equipment.name} (${equipment.equipmentId}). Equipment is now Working.`,
             category: 'Success'
           });
         }
@@ -443,6 +522,48 @@ exports.getOrCreateComplaintMaintenance = async (req, res) => {
           updatedBy: req.user._id
         });
         await complaint.save();
+      }
+
+      // Ensure equipment is marked Under Maintenance
+      const equip = await Equipment.findById(complaint.equipment._id || complaint.equipment);
+      if (equip && equip.currentStatus !== 'Under Maintenance') {
+        equip.currentStatus = 'Under Maintenance';
+        await equip.save();
+      }
+
+      // Notify Admins
+      const adminUsers = await User.find({ role: 'Admin' });
+      for (const admin of adminUsers) {
+        await Notification.create({
+          user: admin._id,
+          title: `Maintenance In Progress: ${equip?.name || 'Equipment'}`,
+          message: `Technician ${req.user.name} started corrective maintenance on ${equip?.name} (${equip?.equipmentId || ''}) for complaint ${complaint.complaintId}. Equipment is now Under Maintenance.`,
+          category: 'Info'
+        });
+      }
+
+      // Notify Complaint Submitter
+      if (complaint.raisedBy) {
+        await Notification.create({
+          user: complaint.raisedBy,
+          title: `Service In Progress: ${equip?.name || 'Equipment'}`,
+          message: `Technician ${req.user.name} has opened maintenance on your complaint ${complaint.complaintId}. Status: In Progress.`,
+          category: 'Info'
+        });
+      }
+
+      // Notify Department Staff
+      if (equip?.department) {
+        const deptStaff = await User.find({ role: 'Department Staff', department: equip.department });
+        for (const staff of deptStaff) {
+          if (complaint.raisedBy && staff._id.toString() === complaint.raisedBy.toString()) continue;
+          await Notification.create({
+            user: staff._id,
+            title: `Equipment Under Maintenance: ${equip.name}`,
+            message: `Technician ${req.user.name} started corrective service on ${equip.name} (${equip.equipmentId}) in your department. Status: In Progress.`,
+            category: 'Warning'
+          });
+        }
       }
 
       record = await Maintenance.findById(record._id)
